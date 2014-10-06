@@ -27,7 +27,7 @@ define(['require', 'text!version.json', 'console_shim', 'jquery', 'underscore', 
         window.URL = window.webkitURL;
     }
 
-    var Readium = function(readiumOptions, readerOptions){
+    var Readium = function(readiumOptions, readerOptions, onError){
 
         var self = this;
 
@@ -59,7 +59,7 @@ define(['require', 'text!version.json', 'console_shim', 'jquery', 'underscore', 
 
             _currentPublicationFetcher.initialize(function() {
 
-                var _packageParser = new PackageParser(bookRoot, _currentPublicationFetcher);
+                var _packageParser = new PackageParser(bookRoot, _currentPublicationFetcher, onError);
 
                 _packageParser.parse(function(packageDocument){
                     var openBookOptions = readiumOptions.openBookOptions || {};

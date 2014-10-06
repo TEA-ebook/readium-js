@@ -19,21 +19,23 @@ define(['require', 'module', 'jquery', 'underscore', 'backbone', 'epub-fetch/mar
         // `PackageDocumentParser` is used to parse the xml of an epub package
     // document and build a javascript object. The constructor accepts an
     // instance of `URI` that is used to resolve paths during the process
-    var PackageDocumentParser = function(bookRoot, publicationFetcher) {
+    var PackageDocumentParser = function(bookRoot, publicationFetcher, onError) {
 
         var _packageFetcher = publicationFetcher;
         var _deferredXmlDom = $.Deferred();
         var _xmlDom;
 
-        function onError(error) {
-            if (error) {
-                if (error.message) {
-                    console.error(error.message);
+        if(!onError) {
+            onError = function (error) {
+                if (error) {
+                    if (error.message) {
+                        console.error(error.message);
+                    }
+                    if (error.stack) {
+                        console.error(error.stack);
+                    }
                 }
-                if (error.stack) {
-                    console.error(error.stack);
-                }
-            }
+            };
         }
 
         publicationFetcher.getPackageDom(function(packageDom){

@@ -25,7 +25,7 @@ define(['require', 'module', 'jquery', 'underscore', 'backbone', 'epub-fetch/mar
         var _deferredXmlDom = $.Deferred();
         var _xmlDom;
 
-        if(!onError) {
+        if(!onError || !(onError instanceof Function)) {
             onError = function (error) {
                 if (error) {
                     if (error.message) {

@@ -56,10 +56,10 @@ module.exports = function(grunt) {
                                 sha: sharedCommit,
                                 clean : sharedIsClean
                             }
-                        }
+                        };
                         fs.writeFileSync('./version.json', JSON.stringify(obj));
                         done();
-                    })
+                    });
                 });
             });
 
@@ -81,18 +81,29 @@ module.exports = function(grunt) {
                     almond: grunt.option('minify'),
                     wrap: grunt.option('syncload')?{
                       start: "(function (root, ReadiumModuleFactory) {\nroot.Readium = ReadiumModuleFactory();\n}(this, function () {",
-                      end: "var Readium = require('Readium');\nreturn Readium;\n}));",
+                      end: "var Readium = require('Readium');\nreturn Readium;\n}));"
                     }:undefined
                 }
+            },
+
+            embedded: {
+                options: {
+                    mainConfigFile: "rjs_require_embedded_config.js",
+                    name: "Readium",
+                    optimize: "none",
+                    out: "out/Readium.embedded.js",
+                    preserveLicenseComments: false,
+                    wrap: {
+                        end: "window.readiumReady = true;"
+                    }
+                }
             }
-        },
-
-
+        }
     });
     
 
     require('load-grunt-tasks')(grunt);
-    
-    grunt.registerTask('default', ['versioning', 'requirejs']);
 
+    grunt.registerTask('default', ['versioning', 'requirejs:compile']);
+    grunt.registerTask('embedded', ['versioning', 'requirejs:embedded']);
 };

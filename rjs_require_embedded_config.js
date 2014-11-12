@@ -28,6 +28,9 @@ var requirejs = {
         'jszip': 'lib/jszip.min',
         'inflate': 'lib/inflate',
 
+        hammer: 'lib/hammer',
+        jquery_hammer: 'lib/jquery.hammer',
+
         jquerySizes: 'epub-modules/epub-renderer/src/readium-shared-js/lib/jquery.sizes',
         readiumSDK: 'epub-modules/epub-renderer/src/readium-shared-js/js/readium_sdk',
         helpers: 'epub-modules/epub-renderer/src/readium-shared-js/js/helpers',
@@ -62,15 +65,15 @@ var requirejs = {
         internalLinksSupport: 'epub-modules/epub-renderer/src/readium-shared-js/js/views/internal_links_support',
         iframeLoader: 'epub-modules/epub-renderer/src/readium-shared-js/js/views/iframe_loader',
 
-        bowser : 'lib/bowser',
-        domReady : 'lib/domReady',
+        bowser: 'lib/bowser',
+        domReady: 'lib/domReady',
 
-        rangy : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy',
-        "rangy-core" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-core',
-        "rangy-textrange" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-textrange',
-        "rangy-highlighter" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-highlighter',
-        "rangy-cssclassapplier" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-cssclassapplier',
-        "rangy-position" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-position',
+        rangy: 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy',
+        "rangy-core": 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-core',
+        "rangy-textrange": 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-textrange',
+        "rangy-highlighter": 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-highlighter',
+        "rangy-cssclassapplier": 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-cssclassapplier',
+        "rangy-position": 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-position',
 
 
         Readium: 'epub-modules/Readium'
@@ -102,13 +105,12 @@ var requirejs = {
 
 
     shim: {
-
         'rangy-core': {
             deps: ["domReady"],
             exports: "rangy", // global.rangy
-            init: function(domReady) {
+            init: function (domReady) {
                 var rangi = this.rangy;
-                domReady(function(){
+                domReady(function () {
                     rangi.init();
                 });
                 return this.rangy;
@@ -165,7 +167,7 @@ var requirejs = {
 
         readiumSDK: {
             deps: ['backbone'],
-            exports:'readiumSDK'
+            exports: 'readiumSDK'
         },
 
         viewerSettings: {
@@ -174,17 +176,17 @@ var requirejs = {
         },
 
         styleCollection: {
-            deps:['readiumSDK', 'style'],
+            deps: ['readiumSDK', 'style'],
             exports: 'styleCollection'
         },
 
         spineItem: {
-            deps:['readiumSDK'],
-            exports:'spineItem'
+            deps: ['readiumSDK'],
+            exports: 'spineItem'
         },
 
         spine: {
-            deps:['readiumSDK', 'spineItem'],
+            deps: ['readiumSDK', 'spineItem'],
             exports: 'spine'
         },
 
@@ -194,43 +196,43 @@ var requirejs = {
         },
 
         mediaOverlayPlayer: {
-            deps:['readiumSDK', 'mediaOverlay', 'audioPlayer', 'mediaOverlayElementHighlighter', 'rangy'],
-            exports:'mediaOverlayPlayer'
+            deps: ['readiumSDK', 'mediaOverlay', 'audioPlayer', 'mediaOverlayElementHighlighter', 'rangy'],
+            exports: 'mediaOverlayPlayer'
         },
 
         mediaOverlay: {
-            deps:['readiumSDK', 'smilModel'],
+            deps: ['readiumSDK', 'smilModel'],
             exports: 'mediaOverlay'
         },
 
         package: {
-            deps:['readiumSDK', 'spine', 'mediaOverlay'],
-            exports:'package'
+            deps: ['readiumSDK', 'spine', 'mediaOverlay'],
+            exports: 'package'
         },
 
         audioPlayer: {
-            deps:['readiumSDK'],
+            deps: ['readiumSDK'],
             exports: 'audioPlayer'
         },
 
         mediaOverlayElementHighlighter: {
-            deps:['readiumSDK', 'rangy'],
+            deps: ['readiumSDK', 'rangy'],
             exports: 'mediaOverlayElementHighlighter'
         },
 
         pageOpenRequest: {
-            deps:['readiumSDK'],
+            deps: ['readiumSDK'],
             exports: 'pageOpenRequest'
         },
 
         onePageView: {
-            deps:['readiumSDK', 'cfiNavigationLogic'],
-            exports:'onePageView'
+            deps: ['readiumSDK', 'cfiNavigationLogic'],
+            exports: 'onePageView'
         },
 
         cfiNavigationLogic: {
             deps: ['readiumSDK', 'epubCfi'],
-            exports:'cfiNavigationLogic'
+            exports: 'cfiNavigationLogic'
         },
 
         epubCFI: {
@@ -299,30 +301,30 @@ var requirejs = {
         },
 
         internalLinksSupport: {
-            deps:['readiumSDK', 'URIjs'],
+            deps: ['readiumSDK', 'URIjs'],
             exports: 'internalLinksSupport'
         },
 
         iframeLoader: {
-            deps:['readiumSDK'],
+            deps: ['readiumSDK'],
             exports: 'iframeLoader'
         },
 
-        readerView : {
-            deps: [ 'backbone','readiumSDK', 'helpers', 'viewerSettings', 'styleCollection', 'package',
+        readerView: {
+            deps: ['backbone', 'readiumSDK', 'helpers', 'viewerSettings', 'styleCollection', 'package',
                 'mediaOverlayPlayer', 'pageOpenRequest', 'fixedView', 'reflowableView', 'mediaOvelayDataInjector',
                 'internalLinksSupport', 'iframeLoader', 'annotationsManager', 'scrollView', 'URIjs', 'triggers', 'switches'],
-            exports:'readerView'
+            exports: 'readerView'
         },
 
         annotations_module: {
             deps: ['epubCfi'],
-            exports:'annotations_module'
+            exports: 'annotations_module'
         },
 
         annotationsManager: {
             deps: ['epubCfi', 'annotations_module'],
-            exports:'annotationsManager'
+            exports: 'annotationsManager'
         },
 
         bowser: {
@@ -331,5 +333,5 @@ var requirejs = {
 
     },
 
-    include: [ 'zip', 'zip_fs', 'zip_ext', 'inflate' ]
+    include: ['zip', 'zip_fs', 'zip_ext', 'inflate', 'hammer', 'jquery_hammer']
 };

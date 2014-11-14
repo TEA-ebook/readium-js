@@ -29,7 +29,6 @@ var requirejs = {
         'inflate': 'lib/inflate',
 
         hammer: 'lib/hammer',
-        jquery_hammer: 'lib/jquery.hammer',
 
         jquerySizes: 'epub-modules/epub-renderer/src/readium-shared-js/lib/jquery.sizes',
         readiumSDK: 'epub-modules/epub-renderer/src/readium-shared-js/js/readium_sdk',

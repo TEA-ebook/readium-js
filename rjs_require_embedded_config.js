@@ -332,5 +332,5 @@ var requirejs = {
 
     },
 
-    include: ['zip', 'zip_fs', 'zip_ext', 'inflate', 'hammer', 'jquery_hammer']
+    include: ['zip', 'zip_fs', 'zip_ext', 'inflate', 'hammer']
 };

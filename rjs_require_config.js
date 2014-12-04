@@ -59,6 +59,7 @@ var requirejs = {
         bowser : 'lib/bowser',
 
         domReady : 'lib/domReady',
+        cryptoJs: 'lib/2.5.3-crypto-sha1',
         
         rangy : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy',
         "rangy-core" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-core',
@@ -322,7 +323,6 @@ var requirejs = {
         bowser: {
             exports: 'bowser'
         }
-
     },
 
     exclude: ['jquery', 'underscore', 'backbone', 'URIjs']

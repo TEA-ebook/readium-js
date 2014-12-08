@@ -64,13 +64,14 @@ define(['URIjs', 'bowser'], function(URI, bowser){
 
             // IE and Safari 6 for iOS don't handle Blobs correctly
             var isBlobHandled = !bowser.msie && !(bowser.ios && (parseInt(bowser.version) < 7));
+            var documentDataUri;
             if (isBlobHandled) {
                 var contentType = 'text/html';
                 if (attachedData.spineItem.media_type && attachedData.spineItem.media_type.length) {
                     contentType = attachedData.spineItem.media_type;
                 }
 
-                var documentDataUri = window.URL.createObjectURL(
+                documentDataUri = window.URL.createObjectURL(
                     new Blob([contentDocumentData], {'type': contentType})
                 );
             } else {

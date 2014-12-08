@@ -59,6 +59,7 @@ define(
                 resolveDocumentEmbeddedStylesheets(resolutionDeferreds, onerror);
 
                 fixSelfClosingTags(resolutionDeferreds);
+                fixImgRatio(resolutionDeferreds);
 
                 $.when.apply($, resolutionDeferreds).done(function () {
                     resolvedDocumentCallback(_contentDocumentDom);
@@ -340,6 +341,24 @@ define(
                 resolutionDeferred.resolve();
             }
 
+            function fixImgRatio(resolutionDeferreds) {
+                var resolutionDeferred = $.Deferred();
+                resolutionDeferreds.push(resolutionDeferred);
+
+                var resolvedElems = $('img,svg', _contentDocumentDom);
+                if (resolvedElems.length === 1) {
+                    resolvedElems[0].style.width = 'auto';
+                    var parent = resolvedElems[0].parentNode;
+                    while (parent.tagName.toLowerCase() !== "body") {
+                        if (!parent.style.height || parent.style.height === "") {
+                            parent.style.height = '100%';
+                        }
+                        parent = parent.parentNode;
+                    }
+                }
+
+                resolutionDeferred.resolve();
+            }
         };
 
         return ContentDocumentFetcher;

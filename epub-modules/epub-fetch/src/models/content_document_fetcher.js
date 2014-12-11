@@ -348,6 +348,7 @@ define(
                 var resolvedElems = $('img,svg', _contentDocumentDom);
                 if (resolvedElems.length === 1) {
                     resolvedElems[0].style.width = 'auto';
+                    resolvedElems[0].style.height = 'auto';
                     var parent = resolvedElems[0].parentNode;
                     while (parent.tagName.toLowerCase() !== "body") {
                         if (!parent.style.height || parent.style.height === "") {

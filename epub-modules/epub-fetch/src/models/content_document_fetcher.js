@@ -43,27 +43,31 @@ define(
             };
 
             this.resolveInternalPackageResources = function (resolvedDocumentCallback, onerror) {
-
                 _contentDocumentDom = _publicationFetcher.markupParser.parseMarkup(_contentDocumentText, _srcMediaType);
-                setBaseUri(_contentDocumentDom, loadedDocumentUri);
 
                 var resolutionDeferreds = [];
+                var isDocumentSvg = (_srcMediaType === "image/svg+xml");
 
-                if (_publicationFetcher.shouldFetchMediaAssetsProgrammatically()) {
-                    resolveDocumentImages(resolutionDeferreds, onerror);
-                    resolveDocumentAudios(resolutionDeferreds, onerror);
-                    resolveDocumentVideos(resolutionDeferreds, onerror);
+                // resolve resources only if the document is not a SVG document
+                if (!isDocumentSvg) {
+                    setBaseUri(_contentDocumentDom, loadedDocumentUri);
+
+                    if (_publicationFetcher.shouldFetchMediaAssetsProgrammatically()) {
+                        resolveDocumentImages(resolutionDeferreds, onerror);
+                        resolveDocumentAudios(resolutionDeferreds, onerror);
+                        resolveDocumentVideos(resolutionDeferreds, onerror);
+                    }
+                    // TODO: recursive fetching, parsing and DOM construction of documents in IFRAMEs,
+                    // with CSS preprocessing and obfuscated font handling
+                    resolveDocumentIframes(resolutionDeferreds, onerror);
+                    // TODO: resolution (e.g. using DOM mutation events) of scripts loaded dynamically by scripts
+                    resolveDocumentScripts(resolutionDeferreds, onerror);
+                    resolveDocumentLinkStylesheets(resolutionDeferreds, onerror);
+                    resolveDocumentEmbeddedStylesheets(resolutionDeferreds, onerror);
+
+                    fixSelfClosingTags(resolutionDeferreds);
+                    fixImgRatio(resolutionDeferreds);
                 }
-                // TODO: recursive fetching, parsing and DOM construction of documents in IFRAMEs,
-                // with CSS preprocessing and obfuscated font handling
-                resolveDocumentIframes(resolutionDeferreds, onerror);
-                // TODO: resolution (e.g. using DOM mutation events) of scripts loaded dynamically by scripts
-                resolveDocumentScripts(resolutionDeferreds, onerror);
-                resolveDocumentLinkStylesheets(resolutionDeferreds, onerror);
-                resolveDocumentEmbeddedStylesheets(resolutionDeferreds, onerror);
-
-                fixSelfClosingTags(resolutionDeferreds);
-                fixImgRatio(resolutionDeferreds);
 
                 $.when.apply($, resolutionDeferreds).done(function () {
                     resolvedDocumentCallback(_contentDocumentDom);
@@ -129,7 +133,7 @@ define(
                                     if (declaredType) {
                                         textResourceContentType = declaredType;
                                     }
-                                    finalResourceData = new Blob([finalResourceData], {type: textResourceContentType});
+                                    finalResourceData = new Blob([finalResourceData], { type: textResourceContentType });
                                 }
                                 //noinspection JSUnresolvedVariable,JSUnresolvedFunction
                                 var resourceObjectURL = window.URL.createObjectURL(finalResourceData);
@@ -156,7 +160,9 @@ define(
                 var origMatchedUrlString = cssUrlMatch[0];
 
                 var extractedUrlCandidates = cssUrlMatch.slice(2);
-                var extractedUrl = _.find(extractedUrlCandidates, function(matchGroup){ return typeof matchGroup !== 'undefined' });
+                var extractedUrl = _.find(extractedUrlCandidates, function (matchGroup) {
+                    return typeof matchGroup !== 'undefined'
+                });
 
                 var extractedUri = new URI(extractedUrl);
                 var isCssUrlRelative = extractedUri.scheme() === '';
@@ -202,7 +208,7 @@ define(
                         fetchCallback = function (styleSheetResourceData) {
                             preprocessCssStyleSheetData(styleSheetResourceData, resourceUriRelativeToPackageDocument,
                                 function (preprocessedStyleSheetData) {
-                                    var resourceDataBlob = new Blob([preprocessedStyleSheetData], {type: 'text/css'});
+                                    var resourceDataBlob = new Blob([preprocessedStyleSheetData], { type: 'text/css' });
                                     processedBlobCallback(resourceDataBlob);
                                 })
                         }

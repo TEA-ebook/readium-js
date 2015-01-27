@@ -63,19 +63,25 @@ define(['URIjs', 'bowser'], function(URI, bowser){
         };
 
         this._loadIframeWithDocument = function (iframe, attachedData, contentDocumentData, callback) {
+            var documentDataUri, blob;
 
             // IE and Safari 6 for iOS don't handle Blobs correctly
             var isBlobHandled = !bowser.msie && !(bowser.ios && (parseInt(bowser.version) < 7));
-            var documentDataUri;
             if (isBlobHandled) {
                 var contentType = 'text/html';
                 if (attachedData.spineItem.media_type && attachedData.spineItem.media_type.length) {
                     contentType = attachedData.spineItem.media_type;
                 }
 
-                documentDataUri = window.URL.createObjectURL(
-                    new Blob([contentDocumentData], {'type': contentType})
-                );
+                // prefer BlobBuilder as some browser supports Blob constructor but fails using it
+                if (window.BlobBuilder) {
+                    var builder = new BlobBuilder();
+                    builder.append(contentDocumentData);
+                    blob = builder.getBlob(contentType);
+                } else {
+                    blob = new Blob([contentDocumentData], { 'type': contentType });
+                }
+                documentDataUri = window.URL.createObjectURL(blob);
             } else {
                 // Internet Explorer doesn't handle loading documents from Blobs correctly.
                 // TODO: Currently using the document.write() approach only for IE, as it breaks CSS selectors

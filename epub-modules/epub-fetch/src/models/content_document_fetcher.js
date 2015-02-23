@@ -12,11 +12,11 @@
 //  prior written permission.
 
 define(
-    ['require', 'module', 'jquery', 'URIjs', './discover_content_type'],
-    function (require, module, $, URI, ContentTypeDiscovery) {
+    ['require', 'module', 'jquery', 'underscore', 'URIjs', './discover_content_type'],
+    function (require, module, $, _, URI, ContentTypeDiscovery) {
 
 
-        var ContentDocumentFetcher = function (publicationFetcher, spineItem, publicationResourcesCache) {
+        var ContentDocumentFetcher = function (publicationFetcher, spineItem, loadedDocumentUri, publicationResourcesCache, contentDocumentTextPreprocessor) {
 
             var self = this;
 
@@ -26,6 +26,7 @@ define(
             var _srcMediaType = spineItem.media_type;
             var _contentDocumentDom;
             var _publicationResourcesCache = publicationResourcesCache;
+            var _contentDocumentTextPreprocessor = contentDocumentTextPreprocessor;
 
             // PUBLIC API
 
@@ -33,6 +34,9 @@ define(
                 _publicationFetcher.relativeToPackageFetchFileContents(_contentDocumentPathRelativeToPackage, 'text',
                     function (contentDocumentText) {
                         _contentDocumentText = contentDocumentText;
+                        if (_contentDocumentTextPreprocessor) {
+                            _contentDocumentText = _contentDocumentTextPreprocessor(loadedDocumentUri, _contentDocumentText);
+                        }
                         self.resolveInternalPackageResources(contentDocumentResolvedCallback, errorCallback);
                     }, errorCallback
                 );
@@ -41,10 +45,20 @@ define(
             this.resolveInternalPackageResources = function (resolvedDocumentCallback, onerror) {
 
                 _contentDocumentDom = _publicationFetcher.markupParser.parseMarkup(_contentDocumentText, _srcMediaType);
+                setBaseUri(_contentDocumentDom, loadedDocumentUri);
 
                 var resolutionDeferreds = [];
 
-                resolveDocumentImages(resolutionDeferreds, onerror);
+                if (_publicationFetcher.shouldFetchMediaAssetsProgrammatically()) {
+                    resolveDocumentImages(resolutionDeferreds, onerror);
+                    resolveDocumentAudios(resolutionDeferreds, onerror);
+                    resolveDocumentVideos(resolutionDeferreds, onerror);
+                }
+                // TODO: recursive fetching, parsing and DOM construction of documents in IFRAMEs,
+                // with CSS preprocessing and obfuscated font handling
+                resolveDocumentIframes(resolutionDeferreds, onerror);
+                // TODO: resolution (e.g. using DOM mutation events) of scripts loaded dynamically by scripts
+                resolveDocumentScripts(resolutionDeferreds, onerror);
                 resolveDocumentLinkStylesheets(resolutionDeferreds, onerror);
                 resolveDocumentEmbeddedStylesheets(resolutionDeferreds, onerror);
 
@@ -55,6 +69,19 @@ define(
             };
 
             // INTERNAL FUNCTIONS
+
+            function setBaseUri(documentDom, baseURI) {
+                var baseElem = documentDom.getElementsByTagName('base')[0];
+                if (!baseElem) {
+                    baseElem = documentDom.createElement('base');
+
+                    var anchor = documentDom.getElementsByTagName('head')[0];
+                    if (anchor) {
+                        anchor.insertBefore(baseElem, anchor.childNodes[0]);
+                    }
+                }
+                baseElem.setAttribute('href', baseURI);
+            }
 
             function _handleError(err) {
                 if (err) {
@@ -105,8 +132,8 @@ define(
                                 }
                                 //noinspection JSUnresolvedVariable,JSUnresolvedFunction
                                 var resourceObjectURL = window.URL.createObjectURL(finalResourceData);
-                                _publicationResourcesCache.putResourceURL(resourceUriRelativeToPackageDocument,
-                                    resourceObjectURL);
+                                _publicationResourcesCache.putResource(resourceUriRelativeToPackageDocument,
+                                    resourceObjectURL, finalResourceData);
                                 // TODO: take care of releasing object URLs when no longer needed
                                 replaceRefAttrInElem(resourceObjectURL);
                                 resolutionDeferred.resolve();
@@ -126,7 +153,10 @@ define(
                                                  styleSheetUriRelativeToPackageDocument, stylesheetCssResourceUrlsMap,
                                                  isStyleSheetResource) {
                 var origMatchedUrlString = cssUrlMatch[0];
-                var extractedUrl = cssUrlMatch[2];
+
+                var extractedUrlCandidates = cssUrlMatch.slice(2);
+                var extractedUrl = _.find(extractedUrlCandidates, function(matchGroup){ return typeof matchGroup !== 'undefined' });
+
                 var extractedUri = new URI(extractedUrl);
                 var isCssUrlRelative = extractedUri.scheme() === '';
                 if (!isCssUrlRelative) {
@@ -154,7 +184,8 @@ define(
                             isStyleSheetResource: isStyleSheetResource,
                             resourceObjectURL: resourceObjectURL
                         };
-                        _publicationResourcesCache.putResourceURL(resourceUriRelativeToPackageDocument, resourceObjectURL);
+                        _publicationResourcesCache.putResource(resourceUriRelativeToPackageDocument,
+                            resourceObjectURL, resourceDataBlob);
                         cssUrlFetchDeferred.resolve();
                     };
                     var fetchErrorCallback = function (error) {
@@ -187,9 +218,8 @@ define(
 
             function preprocessCssStyleSheetData(styleSheetResourceData, styleSheetUriRelativeToPackageDocument,
                                                  callback) {
-                // TODO: regexp probably invalid for url('someUrl"ContainingQuote'):
-                var cssUrlRegexp = /[Uu][Rr][Ll]\(\s*(['"]?)([^']+)\1\s*\)/g;
-                var nonUrlCssImportRegexp = /@[Ii][Mm][Pp][Oo][Rr][Tt]\s*(['"])([^"']+)\1/g;
+                var cssUrlRegexp = /[Uu][Rr][Ll]\(\s*([']([^']+)[']|["]([^"]+)["]|([^)]+))\s*\)/g;
+                var nonUrlCssImportRegexp = /@[Ii][Mm][Pp][Oo][Rr][Tt]\s*('([^']+)'|"([^"]+)")/g;
                 var stylesheetCssResourceUrlsMap = {};
                 var cssResourceDownloadDeferreds = [];
                 // Go through the stylesheet text using all regexps and process according to those regexp matches, if any:
@@ -244,7 +274,7 @@ define(
             function resolveResourceElements(elemName, refAttr, fetchMode, resolutionDeferreds, onerror,
                                              resourceDataPreprocessing) {
 
-                var resolvedElems = $(elemName + '[' + refAttr + ']', _contentDocumentDom);
+                var resolvedElems = $(elemName + '[' + refAttr.replace(':', '\\:') + ']', _contentDocumentDom);
 
                 resolvedElems.each(function (index, resolvedElem) {
                     var refAttrOrigVal = $(resolvedElem).attr(refAttr);
@@ -261,6 +291,24 @@ define(
 
             function resolveDocumentImages(resolutionDeferreds, onerror) {
                 resolveResourceElements('img', 'src', 'blob', resolutionDeferreds, onerror);
+                resolveResourceElements('image', 'xlink:href', 'blob', resolutionDeferreds, onerror);
+            }
+
+            function resolveDocumentAudios(resolutionDeferreds, onerror) {
+                resolveResourceElements('audio', 'src', 'blob', resolutionDeferreds, onerror);
+            }
+
+            function resolveDocumentVideos(resolutionDeferreds, onerror) {
+                resolveResourceElements('video', 'src', 'blob', resolutionDeferreds, onerror);
+                resolveResourceElements('video', 'poster', 'blob', resolutionDeferreds, onerror);
+            }
+
+            function resolveDocumentScripts(resolutionDeferreds, onerror) {
+                resolveResourceElements('script', 'src', 'blob', resolutionDeferreds, onerror);
+            }
+
+            function resolveDocumentIframes(resolutionDeferreds, onerror) {
+                resolveResourceElements('iframe', 'src', 'blob', resolutionDeferreds, onerror);
             }
 
             function resolveDocumentLinkStylesheets(resolutionDeferreds, onerror) {

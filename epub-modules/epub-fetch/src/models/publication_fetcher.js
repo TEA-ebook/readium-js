@@ -16,7 +16,7 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
     function (require, module, $, URI, MarkupParser, PlainResourceFetcher, ZipResourceFetcher, ContentDocumentFetcher,
               ResourceCache, EncryptionHandler) {
 
-    var PublicationFetcher = function(bookRoot, jsLibRoot) {
+    var PublicationFetcher = function(bookRoot, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor) {
 
         var self = this;
 
@@ -26,14 +26,15 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
             'application/zip': 'zipped'
         };
 
-        var _shouldFetchProgrammatically;
+        var _shouldConstructDomProgrammatically;
         var _resourceFetcher;
         var _encryptionHandler;
         var _packageFullPath;
         var _packageDom;
         var _packageDomInitializationDeferred;
-        var _publicationResourcesCache = new ResourceCache;
+        var _publicationResourcesCache = new ResourceCache(sourceWindow, cacheSizeEvictThreshold);
 
+        var _contentDocumentTextPreprocessor = contentDocumentTextPreprocessor;
 
         this.markupParser = new MarkupParser();
 
@@ -42,7 +43,7 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
             var isEpubExploded = isExploded();
 
             // Non exploded EPUBs (i.e. zipped .epub documents) should be fetched in a programmatical manner:
-            _shouldFetchProgrammatically = !isEpubExploded;
+            _shouldConstructDomProgrammatically = !isEpubExploded;
             createResourceFetcher(isEpubExploded, callback);
         };
 
@@ -94,8 +95,21 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
          *
          * false if documents can be fed directly into a window or iframe by src URL without using special fetching logic.
          */
-        this.shouldFetchProgrammatically = function (){
-            return _shouldFetchProgrammatically;
+        this.shouldConstructDomProgrammatically = function (){
+            return _shouldConstructDomProgrammatically;
+        };
+
+        /**
+         * Determine whether the media assets (audio, video, images) within content documents require special
+         * programmatic handling.
+         * @returns {*} true if content documents fetched using this fetcher require programmatic fetching
+         * of media assets. Typically needed for zipped EPUBs.
+         *
+         * false if paths to media assets are accessible directly for the browser through their paths relative to
+         * the base URI of their content document.
+         */
+        this.shouldFetchMediaAssetsProgrammatically = function() {
+            return _shouldConstructDomProgrammatically && !isExploded();
         };
 
         this.getBookRoot = function() {
@@ -104,15 +118,21 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
 
         this.getJsLibRoot = function() {
             return jsLibRoot;
-        }
+        };
+
+        this.flushCache = function() {
+            _publicationResourcesCache.flushCache();
+        };
 
         this.getPackageUrl = function() {
             return _resourceFetcher.getPackageUrl();
         };
 
-        this.fetchContentDocument = function (attachedData, contentDocumentResolvedCallback, errorCallback) {
+        this.fetchContentDocument = function (attachedData, loadedDocumentUri, contentDocumentResolvedCallback, errorCallback) {
 
-            var contentDocumentFetcher = new ContentDocumentFetcher(self, attachedData.spineItem, _publicationResourcesCache);
+            // Resources loaded for previously fetched document no longer need to be pinned:
+            _publicationResourcesCache.unPinResources();
+            var contentDocumentFetcher = new ContentDocumentFetcher(self, attachedData.spineItem, loadedDocumentUri, _publicationResourcesCache, _contentDocumentTextPreprocessor);
             contentDocumentFetcher.fetchContentDocumentAndResolveDom(contentDocumentResolvedCallback, function (err) {
                 _handleError(err);
                 errorCallback(err);
@@ -182,14 +202,18 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
                 onerror = _handleError;
             }
 
-            var pathRelativeToZipRoot = decodeURIComponent(self.convertPathRelativeToPackageToRelativeToBase(relativeToPackagePath));
+            var pathRelativeToEpubRoot = decodeURIComponent(self.convertPathRelativeToPackageToRelativeToBase(relativeToPackagePath));
+            // In case we received an absolute path, convert it to relative form or the fetch will fail:
+            if (pathRelativeToEpubRoot.charAt(0) === '/') {
+                pathRelativeToEpubRoot = pathRelativeToEpubRoot.substr(1);
+            }
             var fetchFunction = _resourceFetcher.fetchFileContentsText;
             if (fetchMode === 'blob') {
                 fetchFunction = _resourceFetcher.fetchFileContentsBlob;
             } else if (fetchMode === 'data64uri') {
                 fetchFunction = _resourceFetcher.fetchFileContentsData64Uri;
             }
-            fetchFunction.call(_resourceFetcher, pathRelativeToZipRoot, fetchCallback, onerror);
+            fetchFunction.call(_resourceFetcher, pathRelativeToEpubRoot, fetchCallback, onerror);
         };
 
 
@@ -198,16 +222,62 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
             self.getXmlFileDom(self.convertPathRelativeToPackageToRelativeToBase(filePath), callback, errorCallback);
         };
 
+        function readEncriptionData(callback) {
+            self.getXmlFileDom('META-INF/encryption.xml', function (encryptionDom, error) {
+
+                if(error) {
+                    console.log(error);
+                    console.log("Document doesn't make use of encryption.");
+                    _encryptionHandler = new EncryptionHandler(undefined);
+                    callback();
+                }
+                else {
+
+                    var encryptions = [];
+
+
+                    var encryptedData = $('EncryptedData', encryptionDom);
+                    encryptedData.each(function (index, encryptedData) {
+                        var encryptionAlgorithm = $('EncryptionMethod', encryptedData).first().attr('Algorithm');
+
+                        encryptions.push({algorithm: encryptionAlgorithm});
+
+                        // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
+                        var cipherReference = $('CipherReference', encryptedData);
+                        cipherReference.each(function (index, CipherReference) {
+                            var cipherReferenceURI = $(CipherReference).attr('URI');
+                            console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
+                                cipherReferenceURI);
+                            encryptions[cipherReferenceURI] = encryptionAlgorithm;
+                        });
+                    });
+                }
+
+            });
+        }
+
         // Currently needed for deobfuscating fonts
-        this.setPackageJson = function(packageJson, settingFinishedCallback) {
+        this.setPackageMetadata = function(packageMetadata, settingFinishedCallback) {
 
-            _encryptionHandler = new EncryptionHandler(packageJson, self);
+            self.getXmlFileDom('META-INF/encryption.xml', function (encryptionDom) {
 
-            _encryptionHandler.initializeEncryptionHash(function() {
+                var encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom);
+
+                _encryptionHandler = new EncryptionHandler(encryptionData);
+
                 if (_encryptionHandler.isEncryptionSpecified()) {
                     // EPUBs that use encryption for any resources should be fetched in a programmatical manner:
-                    _shouldFetchProgrammatically = true;
+                    _shouldConstructDomProgrammatically = true;
                 }
+
+                settingFinishedCallback();
+
+
+            }, function(error){
+
+                console.log("Document doesn't make use of encryption.");
+                _encryptionHandler = new EncryptionHandler(undefined);
+
                 settingFinishedCallback();
             });
         };
@@ -215,7 +285,6 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
         this.getDecryptionFunctionForRelativePath = function(pathRelativeToRoot) {
             return _encryptionHandler.getDecryptionFunctionForRelativePath(pathRelativeToRoot);
         }
-
     };
 
     return PublicationFetcher

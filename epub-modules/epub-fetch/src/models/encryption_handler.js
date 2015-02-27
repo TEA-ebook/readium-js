@@ -11,15 +11,20 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['require', 'module'], function (require, module) {
+define(['require', 'module', './lcp_handler', 'cryptoJs'], function (require, module, LcpHandler) {
 
     var EncryptionHandler = function (encryptionData) {
         var self = this;
 
+        var lcpHandler = encryptionData.userKey ? new LcpHandler(encryptionData.userKey, encryptionData.encryptions) : false;
+
         var ENCRYPTION_METHODS = {
             'http://www.idpf.org/2008/embedding': embeddedFontDeobfuscateIdpf,
-            'http://ns.adobe.com/pdf/enc#RC': embeddedFontDeobfuscateAdobe
+            'http://ns.adobe.com/pdf/enc#RC': embeddedFontDeobfuscateAdobe,
+            'http://www.w3.org/2001/04/xmlenc#aes256-cbc': lcpHandler ? lcpHandler.decryptContent : undefined
         };
+
+        var LCP_RETRIEVAL_KEY = 'license.lcpl#/encryption/content_key';
 
         // INTERNAL FUNCTIONS
 
@@ -87,6 +92,14 @@ define(['require', 'module'], function (require, module) {
             return encryptionData && encryptionData.encryptions;
         };
 
+        this.isLcpEncryptionSpecified = function () {
+            if(this.isLcpEncryption === undefined) {
+                this.isLcpEncryption = encryptionData && encryptionData.retrievalKeys && Object.keys(encryptionData.retrievalKeys).every(function (uri) {
+                    return encryptionData.retrievalKeys[uri] === LCP_RETRIEVAL_KEY;
+                });
+            }
+            return this.isLcpEncryption;
+        };
 
         this.getEncryptionMethodForRelativePath = function (pathRelativeToRoot) {
             if (self.isEncryptionSpecified()) {
@@ -105,12 +118,20 @@ define(['require', 'module'], function (require, module) {
             }
         };
 
+        this.checkLicence = function (licence, callback, error) {
+            if (lcpHandler && this.isLcpEncryption) {
+                lcpHandler.checkLicence(licence, callback, error);
+            } else {
+                error("no handler available for this licence");
+            }
+        };
     };
 
-    EncryptionHandler.CreateEncryptionData =  function(id, encryptionDom) {
+    EncryptionHandler.CreateEncryptionData = function (id, encryptionDom, userKey) {
 
         var encryptionData = {
             uid: id,
+            userKey: userKey,
             uidHash: window.Crypto.SHA1(unescape(encodeURIComponent(id.trim())), { asBytes: true }),
             encryptions: undefined
         };
@@ -119,18 +140,28 @@ define(['require', 'module'], function (require, module) {
         encryptedData.each(function (index, encryptedData) {
             var encryptionAlgorithm = $('EncryptionMethod', encryptedData).first().attr('Algorithm');
 
+            var retrievalMethod = false;
+            var retrievalMethods = $('RetrievalMethod', encryptedData);
+            if (retrievalMethods.length > 0) {
+                retrievalMethod = retrievalMethods.first().attr('URI');
+            }
+
             // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
             var cipherReference = $('CipherReference', encryptedData);
             cipherReference.each(function (index, CipherReference) {
                 var cipherReferenceURI = $(CipherReference).attr('URI');
-                console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
-                    cipherReferenceURI);
+                console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' + cipherReferenceURI + (retrievalMethod ? ' with key ' + retrievalMethod : ''));
 
-                if(!encryptionData.encryptions) {
+                if (!encryptionData.encryptions) {
                     encryptionData.encryptions = {};
                 }
 
+                if (!encryptionData.retrievalKeys) {
+                    encryptionData.retrievalKeys = {};
+                }
+
                 encryptionData.encryptions[cipherReferenceURI] = encryptionAlgorithm;
+                encryptionData.retrievalKeys[cipherReferenceURI] = retrievalMethod;
             });
         });
 

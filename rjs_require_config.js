@@ -55,7 +55,7 @@ var requirejs = {
         mediaOvelayDataInjector: 'epub-modules/epub-renderer/src/readium-shared-js/js/views/media_overlay_data_injector',
         internalLinksSupport: 'epub-modules/epub-renderer/src/readium-shared-js/js/views/internal_links_support',
         iframeLoader: 'epub-modules/epub-renderer/src/readium-shared-js/js/views/iframe_loader',
-        
+
 
         domReady : 'lib/domReady',
         cryptoJs: 'lib/2.5.3-crypto-sha1',
@@ -66,7 +66,10 @@ var requirejs = {
         "rangy-highlighter" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-highlighter',
         "rangy-cssclassapplier" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-cssclassapplier',
         "rangy-position" : 'epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-position',
-        
+
+        forge: 'lib/forge.min',
+        promise: 'lib/promise.min',
+
         Readium: 'epub-modules/Readium'
     },
 
@@ -98,48 +101,33 @@ var requirejs = {
     shim: {
 
         'rangy-core': {
-             deps: ["domReady"],
-             exports: "rangy", // global.rangy
-             init: function(domReady) {
-                 var rangi = this.rangy;
-            domReady(function(){
-                rangi.init();
-            });
-            return this.rangy;
-        }
-       },
-       'rangy-textrange': {
-         deps: ["rangy-core"],
-         exports: "rangy.modules.TextRange"
-       },
-       'rangy-highlighter': {
-         deps: ["rangy-core"],
-         exports: "rangy.modules.Highlighter"
-       },
-       'rangy-cssclassapplier': {
-         deps: ["rangy-core"],
-         exports: "rangy.modules.ClassApplier"
-       },
-       'rangy-position': {
-         deps: ["rangy-core"],
-         exports: "rangy.modules.Position"
-       },
-        
-       /*
-       'rangy/rangy-serializer': {
-         deps: ["rangy/rangy-core"],
-         exports: "rangy.modules.Serializer"
-       },
-       'rangy/rangy-selectionsaverestore': {
-         deps: ["rangy/rangy-core"],
-         exports: "rangy.modules.SaveRestore"
-       },
-       */
-       /*
-        console_shim: {
-            exports: 'console_shim'
+            deps: ["domReady"],
+            exports: "rangy", // global.rangy
+            init: function (domReady) {
+                var rangi = this.rangy;
+                domReady(function () {
+                    rangi.init();
+                });
+                return this.rangy;
+            }
         },
-       */
+        'rangy-textrange': {
+            deps: ["rangy-core"],
+            exports: "rangy.modules.TextRange"
+        },
+        'rangy-highlighter': {
+            deps: ["rangy-core"],
+            exports: "rangy.modules.Highlighter"
+        },
+        'rangy-cssclassapplier': {
+            deps: ["rangy-core"],
+            exports: "rangy.modules.ClassApplier"
+        },
+        'rangy-position': {
+            deps: ["rangy-core"],
+            exports: "rangy.modules.Position"
+        },
+
         underscore: {
             exports: '_'
         },
@@ -159,7 +147,7 @@ var requirejs = {
 
         readiumSDK: {
             deps: ['backbone'],
-            exports:'readiumSDK'
+            exports: 'readiumSDK'
         },
 
         viewerSettings: {
@@ -168,17 +156,17 @@ var requirejs = {
         },
 
         styleCollection: {
-            deps:['readiumSDK', 'style'],
+            deps: ['readiumSDK', 'style'],
             exports: 'styleCollection'
         },
 
         spineItem: {
-            deps:['readiumSDK'],
-            exports:'spineItem'
+            deps: ['readiumSDK'],
+            exports: 'spineItem'
         },
 
         spine: {
-            deps:['readiumSDK', 'spineItem'],
+            deps: ['readiumSDK', 'spineItem'],
             exports: 'spine'
         },
 
@@ -188,43 +176,43 @@ var requirejs = {
         },
 
         mediaOverlayPlayer: {
-            deps:['readiumSDK', 'mediaOverlay', 'audioPlayer', 'mediaOverlayElementHighlighter', 'rangy'],
-            exports:'mediaOverlayPlayer'
+            deps: ['readiumSDK', 'mediaOverlay', 'audioPlayer', 'mediaOverlayElementHighlighter', 'rangy'],
+            exports: 'mediaOverlayPlayer'
         },
 
         mediaOverlay: {
-            deps:['readiumSDK', 'smilModel'],
+            deps: ['readiumSDK', 'smilModel'],
             exports: 'mediaOverlay'
         },
 
         package: {
-            deps:['readiumSDK', 'spine', 'mediaOverlay'],
-            exports:'package'
+            deps: ['readiumSDK', 'spine', 'mediaOverlay'],
+            exports: 'package'
         },
 
         audioPlayer: {
-            deps:['readiumSDK'],
+            deps: ['readiumSDK'],
             exports: 'audioPlayer'
         },
 
         mediaOverlayElementHighlighter: {
-            deps:['readiumSDK', 'rangy'],
+            deps: ['readiumSDK', 'rangy'],
             exports: 'mediaOverlayElementHighlighter'
         },
 
         pageOpenRequest: {
-            deps:['readiumSDK'],
+            deps: ['readiumSDK'],
             exports: 'pageOpenRequest'
         },
 
         onePageView: {
-            deps:['readiumSDK', 'cfiNavigationLogic'],
-            exports:'onePageView'
+            deps: ['readiumSDK', 'cfiNavigationLogic'],
+            exports: 'onePageView'
         },
 
         cfiNavigationLogic: {
             deps: ['readiumSDK', 'epubCfi'],
-            exports:'cfiNavigationLogic'
+            exports: 'cfiNavigationLogic'
         },
 
         epubCFI: {
@@ -288,35 +276,35 @@ var requirejs = {
         },
 
         mediaOvelayDataInjector: {
-          deps: ['readiumSDK', 'mediaOverlay', 'mediaOverlayPlayer', 'smilModel', 'spineItem', 'smilIterator', 'rangy'],
-          exports: 'mediaOvelayDataInjector'
+            deps: ['readiumSDK', 'mediaOverlay', 'mediaOverlayPlayer', 'smilModel', 'spineItem', 'smilIterator', 'rangy'],
+            exports: 'mediaOvelayDataInjector'
         },
 
         internalLinksSupport: {
-            deps:['readiumSDK', 'URIjs'],
+            deps: ['readiumSDK', 'URIjs'],
             exports: 'internalLinksSupport'
         },
 
         iframeLoader: {
-            deps:['readiumSDK'],
+            deps: ['readiumSDK'],
             exports: 'iframeLoader'
         },
 
-        readerView : {
-            deps: [ 'backbone','readiumSDK', 'helpers', 'viewerSettings', 'styleCollection', 'package',
+        readerView: {
+            deps: ['backbone', 'readiumSDK', 'helpers', 'viewerSettings', 'styleCollection', 'package',
                 'mediaOverlayPlayer', 'pageOpenRequest', 'fixedView', 'reflowableView', 'mediaOvelayDataInjector',
                 'internalLinksSupport', 'iframeLoader', 'annotationsManager', 'scrollView', 'URIjs', 'triggers', 'switches'],
-            exports:'readerView'
+            exports: 'readerView'
         },
 
         annotations_module: {
             deps: ['epubCfi'],
-            exports:'annotations_module'
+            exports: 'annotations_module'
         },
 
         annotationsManager: {
             deps: ['epubCfi', 'annotations_module'],
-            exports:'annotationsManager'
+            exports: 'annotationsManager'
         }
     },
 

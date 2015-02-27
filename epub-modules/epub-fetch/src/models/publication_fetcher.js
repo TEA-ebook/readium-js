@@ -16,7 +16,7 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
     function (require, module, $, URI, MarkupParser, PlainResourceFetcher, ZipResourceFetcher, ContentDocumentFetcher,
               ResourceCache, EncryptionHandler) {
 
-    var PublicationFetcher = function(bookRoot, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor) {
+    var PublicationFetcher = function(bookRoot, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor, userKey) {
 
         var self = this;
 
@@ -109,7 +109,7 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
          * the base URI of their content document.
          */
         this.shouldFetchMediaAssetsProgrammatically = function() {
-            return _shouldConstructDomProgrammatically && !isExploded();
+            return _shouldConstructDomProgrammatically;
         };
 
         this.getBookRoot = function() {
@@ -152,6 +152,13 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
             self.getFileContentsFromPackage(xmlFilePathRelativeToPackageRoot, function (xmlFileContents) {
                 var fileDom = self.markupParser.parseXml(xmlFileContents);
                 callback(fileDom);
+            }, onerror);
+        };
+
+        this.getLicenceLcp = function (callback, onerror) {
+            self.getFileContentsFromPackage('META-INF/licence.lcpl', function (fileContents) {
+                var licenceJson = JSON.parse(fileContents);
+                callback(licenceJson);
             }, onerror);
         };
 
@@ -207,13 +214,15 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
             if (pathRelativeToEpubRoot.charAt(0) === '/') {
                 pathRelativeToEpubRoot = pathRelativeToEpubRoot.substr(1);
             }
+
+            var decryptionFunction = this.getDecryptionFunctionForRelativePath(pathRelativeToEpubRoot);
             var fetchFunction = _resourceFetcher.fetchFileContentsText;
             if (fetchMode === 'blob') {
                 fetchFunction = _resourceFetcher.fetchFileContentsBlob;
             } else if (fetchMode === 'data64uri') {
                 fetchFunction = _resourceFetcher.fetchFileContentsData64Uri;
             }
-            fetchFunction.call(_resourceFetcher, pathRelativeToEpubRoot, fetchCallback, onerror);
+            fetchFunction.call(_resourceFetcher, pathRelativeToEpubRoot, decryptionFunction, fetchCallback, onerror);
         };
 
 
@@ -222,7 +231,7 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
             self.getXmlFileDom(self.convertPathRelativeToPackageToRelativeToBase(filePath), callback, errorCallback);
         };
 
-        function readEncriptionData(callback) {
+        function readEncryptionData(callback) {
             self.getXmlFileDom('META-INF/encryption.xml', function (encryptionDom, error) {
 
                 if(error) {
@@ -256,37 +265,39 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
             });
         }
 
-        // Currently needed for deobfuscating fonts
+        // Currently needed for deobfuscating fonts and LCP
         this.setPackageMetadata = function(packageMetadata, settingFinishedCallback) {
+
+            var errorCb = function (error) {
+                console.error(error);
+                settingFinishedCallback();
+            };
 
             self.getXmlFileDom('META-INF/encryption.xml', function (encryptionDom) {
 
-                var encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom);
+                var encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom, userKey);
 
                 _encryptionHandler = new EncryptionHandler(encryptionData);
-
                 if (_encryptionHandler.isEncryptionSpecified()) {
                     // EPUBs that use encryption for any resources should be fetched in a programmatical manner:
                     _shouldConstructDomProgrammatically = true;
+
+                    // get LCP licence
+                    if (_encryptionHandler.isLcpEncryptionSpecified()) {
+                        self.getLicenceLcp(function (licence) {
+                            _encryptionHandler.checkLicence(licence, settingFinishedCallback, errorCb);
+                        }, errorCb);
+                    } else {
+                        settingFinishedCallback();
+                    }
                 }
-
-                settingFinishedCallback();
-
-
-            }, function(error){
-
-                console.log("Document doesn't make use of encryption.");
-                _encryptionHandler = new EncryptionHandler(undefined);
-
-                settingFinishedCallback();
-            });
+            }, errorCb);
         };
 
         this.getDecryptionFunctionForRelativePath = function(pathRelativeToRoot) {
-            return _encryptionHandler.getDecryptionFunctionForRelativePath(pathRelativeToRoot);
+            return _encryptionHandler ? _encryptionHandler.getDecryptionFunctionForRelativePath(pathRelativeToRoot) : false;
         }
     };
 
-    return PublicationFetcher
-
+    return PublicationFetcher;
 });

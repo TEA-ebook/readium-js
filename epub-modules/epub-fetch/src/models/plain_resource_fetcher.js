@@ -83,7 +83,7 @@ define(['require', 'module', 'jquery', 'URIjs', './discover_content_type'], func
 
             if (decryptionFunction) {
                 fetchFileContents(pathRelativeToPackageRoot, function (data) {
-                    decryptionFunction(data, 'text', fetchCallback);
+                    decryptionFunction(data, fetchCallback, 'text');
                 }, onerror);
             } else {
                 $.ajax({
@@ -133,11 +133,7 @@ define(['require', 'module', 'jquery', 'URIjs', './discover_content_type'], func
             fetchFileContents(pathRelativeToPackageRoot, function (contentsArrayBuffer) {
                 var type = ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot);
                 if (decryptionFunction) {
-                    decryptionFunction(contentsArrayBuffer, 'blob', function (decryptedArrayBuffer) {
-                        fetchCallback(new Blob([decryptedArrayBuffer], {
-                            'type': type
-                        }));
-                    });
+                    decryptionFunction(contentsArrayBuffer, fetchCallback, 'blob', type);
                 } else {
                     fetchCallback(new Blob([contentsArrayBuffer], {
                         'type': type

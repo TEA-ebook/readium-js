@@ -13,7 +13,7 @@
 
 define(['require', 'module', 'jquery', 'URIjs', './discover_content_type'], function (require, module, $, URI, ContentTypeDiscovery) {
 
-    var ZipResourceFetcher = function(parentFetcher, baseUrl, libDir) {
+    var ZipResourceFetcher = function (parentFetcher, baseUrl, libDir) {
 
         var _checkCrc32 = false;
         var _zipFs;
@@ -34,7 +34,7 @@ define(['require', 'module', 'jquery', 'URIjs', './discover_content_type'], func
                 // The Web Worker requires standalone inflate/deflate.js files in libDir (i.e. cannot be aggregated/minified/optimised in the final generated single-file build)
                 zip.useWebWorkers = true; // (true by default)
                 zip.workerScriptsPath = libDir;
-                
+
                 _zipFs = new zip.fs.FS();
                 _zipFs.importHttpContent(baseUrl, true, function () {
 
@@ -44,7 +44,7 @@ define(['require', 'module', 'jquery', 'URIjs', './discover_content_type'], func
             }
         }
 
-        function fetchFileContents (relativePathRelativeToPackageRoot, readCallback, onerror) {
+        function fetchFileContents(relativePathRelativeToPackageRoot, readCallback, onerror) {
 
             if (typeof relativePathRelativeToPackageRoot === 'undefined') {
                 throw 'Fetched file relative path is undefined!';
@@ -67,34 +67,67 @@ define(['require', 'module', 'jquery', 'URIjs', './discover_content_type'], func
 
         // PUBLIC API
 
-        this.getPackageUrl = function() {
+        this.getPackageUrl = function () {
             return baseUrl;
         };
 
-        this.fetchFileContentsText = function(relativePathRelativeToPackageRoot, fetchCallback, onerror) {
+        this.fetchFileContentsText = function (relativePathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
+            if (onerror === undefined) {
+                onerror = fetchCallback;
+                fetchCallback = decryptionFunction;
+                decryptionFunction = false;
+            }
 
-            fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
-                entry.getText(fetchCallback, undefined, _checkCrc32);
-            }, onerror)
+            if (decryptionFunction) {
+                fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
+                    entry.getBlob(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot), function (blob) {
+                        decryptionFunction(blob, fetchCallback, 'text');
+                    }, undefined, _checkCrc32);
+                }, onerror);
+            } else {
+                fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
+                    entry.getText(fetchCallback, undefined, _checkCrc32);
+                }, onerror);
+            }
         };
 
-        this.fetchFileContentsData64Uri = function(relativePathRelativeToPackageRoot, fetchCallback, onerror) {
-            fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
-                entry.getData64URI(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot),
-                    fetchCallback, undefined, _checkCrc32);
-            }, onerror)
+        this.fetchFileContentsData64Uri = function (relativePathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
+            if (onerror === undefined) {
+                onerror = fetchCallback;
+                fetchCallback = decryptionFunction;
+                decryptionFunction = false;
+            }
+
+            if (decryptionFunction) {
+                fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
+                    entry.getBlob(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot), function (blob) {
+                        decryptionFunction(blob, fetchCallback, 'data64');
+                    }, undefined, _checkCrc32);
+                }, onerror);
+            } else {
+                fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
+                    entry.getData64URI(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot),
+                        fetchCallback, undefined, _checkCrc32);
+                }, onerror);
+            }
         };
 
-        this.fetchFileContentsBlob = function(relativePathRelativeToPackageRoot, fetchCallback, onerror) {
-            var decryptionFunction = parentFetcher.getDecryptionFunctionForRelativePath(relativePathRelativeToPackageRoot);
+        this.fetchFileContentsBlob = function (relativePathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
+            if (onerror === undefined) {
+                onerror = fetchCallback;
+                fetchCallback = decryptionFunction;
+                decryptionFunction = false;
+            }
+
             if (decryptionFunction) {
                 var origFetchCallback = fetchCallback;
                 fetchCallback = function (unencryptedBlob) {
                     decryptionFunction(unencryptedBlob, function (decryptedBlob) {
                         origFetchCallback(decryptedBlob);
-                    });
+                    }, 'blob', ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot));
                 };
             }
+
             fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
                 entry.getBlob(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot), fetchCallback,
                     undefined, _checkCrc32);

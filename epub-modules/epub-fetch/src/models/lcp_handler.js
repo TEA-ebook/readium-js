@@ -34,12 +34,14 @@ define(['require', 'forge'], function (require, forge) {
                 var userKeyCheck = licence.encryption.user_key.key_check;
 
                 // Decrypt and compare it to license ID
-                if (licence.id === decipher(userKey, atob(userKeyCheck)).data) {
-                    console.info("User key is valid");
-                    resolve();
-                } else {
-                    reject(Error("User key is invalid"));
-                }
+                decipher(userKey, atob(userKeyCheck)).then(function (userKeyCheckDecrypted) {
+                    if (licence.id === userKeyCheckDecrypted.data) {
+                        console.info("User key is valid");
+                        resolve();
+                    } else {
+                        reject(Error("User key is invalid"));
+                    }
+                });
             });
         }
 
@@ -167,25 +169,37 @@ define(['require', 'forge'], function (require, forge) {
         }
 
         function getContentKey(licence) {
-            return new Promise(function (resolve, reject) {
+            return new Promise(function (resolve) {
                 var contentKeyEncrypted = atob(licence.encryption.content_key.encrypted_value);
-                resolve(decipher(userKey, contentKeyEncrypted).data);
+                decipher(userKey, contentKeyEncrypted).then(function (contentKeyDeciphered) {
+                    resolve(contentKeyDeciphered.data);
+                })
             });
         }
 
-        function decipher(key, encryptedData) {
-            var aesCipher = forge.cipher.createDecipher('AES-CBC', key);
-
-            if (encryptedData instanceof ArrayBuffer) {
-                encryptedData = arrayBuffer2Binary(encryptedData);
+        function decipher(key, encryptedData, dataType) {
+            if (dataType === "arraybuffer") {
+                return aesDecipher(key, arrayBuffer2Binary(encryptedData));
             }
-            aesCipher.start({ iv: encryptedData.substring(0, 16) });
-            aesCipher.update(forge.util.createBuffer(encryptedData.substring(16)));
-            aesCipher.finish();
-
-            return aesCipher.output;
+            if (dataType === "blob") {
+                return blobToArrayBuffer(encryptedData).then(function (arrayBuffer) {
+                    return aesDecipher(key, arrayBuffer2Binary(arrayBuffer));
+                });
+            }
+            return aesDecipher(key, encryptedData);
         }
 
+        function aesDecipher(key, encryptedData) {
+            return new Promise(function (resolve) {
+                var aesCipher = forge.cipher.createDecipher('AES-CBC', key);
+
+                aesCipher.start({ iv: encryptedData.substring(0, 16) });
+                aesCipher.update(forge.util.createBuffer(encryptedData.substring(16)));
+                aesCipher.finish();
+
+                resolve(aesCipher.output);
+            });
+        }
 
         // Utility functions
 
@@ -237,6 +251,27 @@ define(['require', 'forge'], function (require, forge) {
             return string.join("");
         }
 
+        function blobToArrayBuffer(blob) {
+            return new Promise(function (resolve, reject) {
+                var fileReader = new FileReader();
+                fileReader.onload = function () {
+                    resolve(this.result);
+                };
+                fileReader.onerror = reject;
+                fileReader.readAsArrayBuffer(blob);
+            });
+        }
+
+        function getTypeOfData(data) {
+            if (data instanceof Blob) {
+                return "blob";
+            }
+            if (data instanceof ArrayBuffer) {
+                return "arraybuffer";
+            }
+            return "binary";
+        }
+
 
         // PUBLIC API
 
@@ -254,24 +289,23 @@ define(['require', 'forge'], function (require, forge) {
             }).catch(error);
         };
 
-        this.decryptContent = function (encryptedAes256cbcContent, fetchMode, callback) {
-            var decryptedBinaryData = decipher(contentKey, encryptedAes256cbcContent);
+        this.decryptContent = function (encryptedAes256cbcContent, callback, fetchMode, mimeType) {
+            var dataType = getTypeOfData(encryptedAes256cbcContent);
 
-            // if no fetchMode passed to the function
-            if (callback === undefined) {
-                callback = fetchMode;
-                fetchMode = undefined;
-            }
-
-            if (fetchMode === 'text') {
-                // convert UTF-8 decoded data to UTF-16 javascript string
-                decryptedBinaryData = forge.util.decodeUtf8(decryptedBinaryData.data);
-            } else {
-                // convert into a format acceptable for blob construction
-                decryptedBinaryData = binary2BinArray(decryptedBinaryData.data);
-            }
-
-            callback(decryptedBinaryData);
+            decipher(contentKey, encryptedAes256cbcContent, dataType).then(function (decryptedBinaryData) {
+                if (fetchMode === 'text') {
+                    // convert UTF-8 decoded data to UTF-16 javascript string
+                    callback(forge.util.decodeUtf8(decryptedBinaryData.data));
+                } else if (fetchMode === 'data64') {
+                    // convert into a data64 string
+                    callback(forge.util.encode64(decryptedBinaryData.data));
+                } else {
+                    // convert into a blob
+                    callback(new Blob([binary2BinArray(decryptedBinaryData.data)], { type: mimeType }));
+                }
+            }).catch(function (error) {
+                console.error("Can't decrypt LCP content", error);
+            });
         };
     };
 

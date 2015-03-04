@@ -136,7 +136,7 @@ module.exports = function(grunt) {
                 options: {
                     mainConfigFile: "rjs_require_embedded_config.js",
                     name: "Readium",
-                    optimize: grunt.option('minify')?"uglify":"none",
+                    optimize: "none",//grunt.option('minify')?"uglify":"none",
                     almond: grunt.option('minify'),
                     out: "out/Readium.embedded.js",
                     preserveLicenseComments: false,

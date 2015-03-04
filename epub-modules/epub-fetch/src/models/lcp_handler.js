@@ -11,9 +11,11 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['require', 'forge'], function (require, forge) {
+define(['forge', 'promise'], function (forge, es6Promise) {
 
     var READIUM_LCP_PROFILE_1_0 = 'http://readium.org/lcp/profile-1.0';
+
+    es6Promise.polyfill();
 
     var LcpHandler = function (userPassphrase) {
 

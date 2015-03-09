@@ -63,7 +63,6 @@ var requirejs = {
         "domReady": "lib/domReady",
         "cryptoJs": "lib/2.5.3-crypto-sha1",
 
-        "hammer": "lib/hammer",
         "bowser": "lib/bowser",
         "forge": 'lib/forge.min',
         "promise": 'lib/promise.min',
@@ -332,5 +331,5 @@ var requirejs = {
 
     },
 
-    include: ["zip", "zip_fs", "zip_ext", "inflate", "hammer"]
+    include: ["zip", "zip_fs", "zip_ext", "inflate"]
 };

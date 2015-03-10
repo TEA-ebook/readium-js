@@ -84,7 +84,7 @@ define(['require', 'text!version.json', 'console_shim', 'jquery', 'underscore', 
                 cacheSizeEvictThreshold = readiumOptions.cacheSizeEvictThreshold;
             }
 
-            _currentPublicationFetcher = new PublicationFetcher(bookRoot, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, readiumOptions.userKey);
+            _currentPublicationFetcher = new PublicationFetcher(bookRoot, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, readerOptions);
 
             _currentPublicationFetcher.initialize(function() {
 

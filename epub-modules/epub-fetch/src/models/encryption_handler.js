@@ -16,7 +16,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs'], function (require, mo
     var EncryptionHandler = function (encryptionData) {
         var self = this;
 
-        var lcpHandler = encryptionData.userKey ? new LcpHandler(encryptionData.userKey, encryptionData.encryptions) : false;
+        var lcpHandler = encryptionData.infos ? new LcpHandler(encryptionData.infos, encryptionData.encryptions) : false;
 
         var ENCRYPTION_METHODS = {
             'http://www.idpf.org/2008/embedding': embeddedFontDeobfuscateIdpf,
@@ -127,11 +127,11 @@ define(['require', 'module', './lcp_handler', 'cryptoJs'], function (require, mo
         };
     };
 
-    EncryptionHandler.CreateEncryptionData = function (id, encryptionDom, userKey) {
+    EncryptionHandler.CreateEncryptionData = function (id, encryptionDom, encryptionInfos) {
 
         var encryptionData = {
             uid: id,
-            userKey: userKey,
+            infos: encryptionInfos,
             uidHash: window.Crypto.SHA1(unescape(encodeURIComponent(id.trim())), { asBytes: true }),
             encryptions: undefined
         };

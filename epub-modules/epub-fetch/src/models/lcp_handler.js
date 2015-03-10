@@ -17,16 +17,17 @@ define(['forge', 'promise'], function (forge, es6Promise) {
 
     es6Promise.polyfill();
 
-    var LcpHandler = function (userPassphrase) {
+    var LcpHandler = function (encryptionInfos) {
 
         // private vars
         var userKey, contentKey;
 
         // User key hash
         var md = forge.md.sha256.create();
-        md.update(userPassphrase);
+        md.update(decryptUserKey(encryptionInfos));
         userKey = md.digest().data;
-        delete userPassphrase;
+        delete encryptionInfos.master;
+        delete encryptionInfos.hash;
 
 
         // LCP step by step verifiction functions
@@ -274,6 +275,14 @@ define(['forge', 'promise'], function (forge, es6Promise) {
             return "binary";
         }
 
+        function decryptUserKey(data) {
+            var key = forge.pkcs5.pbkdf2(data.master, forge.util.decode64(data.pepper), 40, 16);
+            var decipher = forge.cipher.createDecipher('AES-CBC', key);
+            decipher.start({ iv: forge.util.decode64(data.force) });
+            decipher.update(forge.util.createBuffer(forge.util.decode64(data.hash)));
+            decipher.finish();
+            return decipher.output.toString();
+        }
 
         // PUBLIC API
 

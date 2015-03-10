@@ -16,7 +16,7 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
     function (require, module, $, URI, MarkupParser, PlainResourceFetcher, ZipResourceFetcher, ContentDocumentFetcher,
               ResourceCache, EncryptionHandler) {
 
-    var PublicationFetcher = function(bookRoot, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor, userKey) {
+    var PublicationFetcher = function(bookRoot, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor, options) {
 
         var self = this;
 
@@ -273,7 +273,10 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
 
             self.getXmlFileDom('META-INF/encryption.xml', function (encryptionDom) {
 
-                var encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom, userKey);
+                    var encryptionInfos = options.misc;
+                encryptionInfos.master = options.el;
+
+                var encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom, encryptionInfos);
 
                 _encryptionHandler = new EncryptionHandler(encryptionData);
                 if (_encryptionHandler.isEncryptionSpecified()) {

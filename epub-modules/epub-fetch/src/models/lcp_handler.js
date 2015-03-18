@@ -312,7 +312,7 @@ define(['forge', 'promise'], function (forge, es6Promise) {
                     callback(forge.util.encode64(decryptedBinaryData.data));
                 } else {
                     // convert into a blob
-                    callback(new Blob([binary2BinArray(decryptedBinaryData.data)], { type: mimeType }));
+                    callback(new Blob([binary2BinArray(decryptedBinaryData.data).buffer], { type: mimeType }));
                 }
             }).catch(function (error) {
                 console.error("Can't decrypt LCP content", error);

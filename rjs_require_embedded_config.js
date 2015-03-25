@@ -66,6 +66,7 @@ var requirejs = {
         "bowser": "lib/bowser",
         "forge": 'lib/forge.min',
         "promise": 'lib/promise.min',
+        "hammer": "lib/hammer",
 
         "rangy": "epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy",
         "rangy-core": "epub-modules/epub-renderer/src/readium-shared-js/lib/rangy/rangy-core",
@@ -331,5 +332,5 @@ var requirejs = {
 
     },
 
-    include: ["zip", "zip_fs", "zip_ext", "inflate"]
+    include: ["zip", "zip_fs", "zip_ext", "inflate", "hammer"]
 };

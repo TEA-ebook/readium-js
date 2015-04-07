@@ -301,12 +301,16 @@ define(['forge', 'promise'], function (forge, es6Promise) {
         };
 
         this.decryptContent = function (encryptedAes256cbcContent, callback, fetchMode, mimeType) {
-            var dataType = getTypeOfData(encryptedAes256cbcContent);
+            var dataType = getTypeOfData(encryptedAes256cbcContent), data;
 
             decipher(contentKey, encryptedAes256cbcContent, dataType).then(function (decryptedBinaryData) {
                 if (fetchMode === 'text') {
-                    // convert UTF-8 decoded data to UTF-16 javascript string
-                    callback(forge.util.decodeUtf8(decryptedBinaryData.data));
+                    // convert UTF-8 decoded data to UTF-16 javascript string (with BOM removal)
+                    data = decryptedBinaryData.data.replace(/^ï»¿/, '');
+                    if (mimeType === 'text/html') {
+                        data = forge.util.decodeUtf8(data);
+                    }
+                    callback(data);
                 } else if (fetchMode === 'data64') {
                     // convert into a data64 string
                     callback(forge.util.encode64(decryptedBinaryData.data));

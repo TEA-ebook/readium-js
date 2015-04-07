@@ -82,8 +82,9 @@ define(['require', 'module', 'jquery', 'URIjs', './discover_content_type'], func
             }
 
             if (decryptionFunction) {
+                var type = ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot);
                 fetchFileContents(pathRelativeToPackageRoot, function (data) {
-                    decryptionFunction(data, fetchCallback, 'text');
+                    decryptionFunction(data, fetchCallback, 'text', type);
                 }, onerror);
             } else {
                 $.ajax({

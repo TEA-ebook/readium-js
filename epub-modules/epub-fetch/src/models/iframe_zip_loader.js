@@ -38,6 +38,7 @@ define(['URIjs', 'bowser'], function(URI, bowser){
 
                     getCurrentResourceFetcher().fetchContentDocument(attachedData, loadedDocumentUri,
                         function (resolvedContentDocumentDom) {
+                            fixImgRatio(resolvedContentDocumentDom);
                             self._loadIframeWithDocument(iframe,
                                 attachedData,
                                 resolvedContentDocumentDom.documentElement.outerHTML,
@@ -55,6 +56,7 @@ define(['URIjs', 'bowser'], function(URI, bowser){
                           callback.call(caller, false, attachedData);
                       } else {
                           self._loadIframeWithDocument(iframe, attachedData, contentDocumentHtml, function () {
+                              fixImgRatio(iframe.contentDocument);
                               callback.call(caller, true, attachedData);
                           });
                       }
@@ -161,6 +163,21 @@ define(['URIjs', 'bowser'], function(URI, bowser){
 
                 callback(contentDocumentHtml);
             });
+        }
+
+        function fixImgRatio(contentDocumentDom) {
+            var resolvedElems = $('img,svg', contentDocumentDom);
+            if (resolvedElems.length === 1) {
+                resolvedElems[0].style.width = 'auto';
+                resolvedElems[0].style.height = 'auto';
+                var parent = resolvedElems[0].parentNode;
+                while (parent.tagName.toLowerCase() !== "body") {
+                    if (!parent.style.height || parent.style.height === "") {
+                        parent.style.height = '100%';
+                    }
+                    parent = parent.parentNode;
+                }
+            }
         }
     };
 

@@ -118,11 +118,11 @@ define(['require', 'module', './lcp_handler', 'cryptoJs'], function (require, mo
             }
         };
 
-        this.checkLicence = function (licence, callback, error) {
+        this.checkLicense = function (license, callback, error) {
             if (lcpHandler && this.isLcpEncryption) {
-                lcpHandler.checkLicence(licence, callback, error);
+                lcpHandler.checkLicense(license, callback, error);
             } else {
-                error("no handler available for this licence");
+                error("no handler available for this license");
             }
         };
     };

@@ -153,10 +153,10 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
             }, onerror);
         };
 
-        this.getLicenceLcp = function (callback, onerror) {
-            self.getFileContentsFromPackage('META-INF/licence.lcpl', function (fileContents) {
-                var licenceJson = JSON.parse(fileContents);
-                callback(licenceJson);
+        this.getLicenseLcp = function (callback, onerror) {
+            self.getFileContentsFromPackage('META-INF/license.lcpl', function (fileContents) {
+                var licenseJson = JSON.parse(fileContents);
+                callback(licenseJson);
             }, onerror);
         };
 
@@ -283,10 +283,10 @@ define(['require', 'module', 'jquery', 'URIjs', './markup_parser', './plain_reso
                     // EPUBs that use encryption for any resources should be fetched in a programmatical manner:
                     _shouldConstructDomProgrammatically = true;
 
-                    // get LCP licence
+                    // get LCP license
                     if (_encryptionHandler.isLcpEncryptionSpecified()) {
-                        self.getLicenceLcp(function (licence) {
-                            _encryptionHandler.checkLicence(licence, settingFinishedCallback, errorCb);
+                        self.getLicenseLcp(function (license) {
+                            _encryptionHandler.checkLicense(license, settingFinishedCallback, errorCb);
                         }, errorCb);
                     } else {
                         settingFinishedCallback();

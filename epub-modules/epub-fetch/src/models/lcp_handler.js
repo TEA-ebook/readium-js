@@ -20,7 +20,7 @@ define(['forge', 'promise'], function (forge, es6Promise) {
     var LcpHandler = function (encryptionInfos) {
 
         // private vars
-        var userKey = encryptionInfos.hash, contentKey;
+        var userKey = forge.util.hexToBytes(encryptionInfos.hash), contentKey;
 
 
         // LCP step by step verifiction functions
@@ -291,7 +291,7 @@ define(['forge', 'promise'], function (forge, es6Promise) {
                 if (fetchMode === 'text') {
                     // convert UTF-8 decoded data to UTF-16 javascript string (with BOM removal)
                     data = decryptedBinaryData.data.replace(/^ï»¿/, '');
-                    if (mimeType === 'text/html') {
+                    if (/html/.test(mimeType)) {
                         data = forge.util.decodeUtf8(data);
                     }
                     callback(data);

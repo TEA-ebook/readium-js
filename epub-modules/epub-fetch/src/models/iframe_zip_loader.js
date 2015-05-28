@@ -168,9 +168,14 @@ define(['URIjs', 'bowser'], function(URI, bowser){
         function fixImgRatio(contentDocumentDom) {
             var resolvedElems = $('img,svg', contentDocumentDom);
             if (resolvedElems.length === 1) {
-                resolvedElems[0].style.width = 'auto';
-                resolvedElems[0].style.height = 'auto';
-                var parent = resolvedElems[0].parentNode;
+                var img = resolvedElems[0];
+                if (!img.hasAttribute("width")) {
+                    img.style.width = 'auto';
+                }
+                if (!img.hasAttribute("height")) {
+                    img.style.height = 'auto';
+                }
+                var parent = img.parentNode;
                 while (parent.tagName.toLowerCase() !== "body") {
                     if (!parent.style.height || parent.style.height === "") {
                         parent.style.height = '100%';

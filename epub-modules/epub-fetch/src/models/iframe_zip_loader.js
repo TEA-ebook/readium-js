@@ -169,9 +169,6 @@ define(['URIjs', 'bowser'], function(URI, bowser){
             var resolvedElems = $('img,svg', contentDocumentDom);
             if (resolvedElems.length === 1) {
                 var img = resolvedElems[0];
-                if (!img.hasAttribute("width")) {
-                    img.style.width = 'auto';
-                }
                 if (!img.hasAttribute("height")) {
                     img.style.height = 'auto';
                 }

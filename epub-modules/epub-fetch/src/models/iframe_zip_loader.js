@@ -173,7 +173,7 @@ define(['URIjs', 'bowser'], function(URI, bowser){
                     img.style.height = 'auto';
                 }
                 var parent = img.parentNode;
-                while (parent.tagName.toLowerCase() !== "body") {
+                while (parent.tagName !== undefined && parent.tagName.toLowerCase() !== "body") {
                     if (!parent.style.height || parent.style.height === "") {
                         parent.style.height = '100%';
                     }

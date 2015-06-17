@@ -84,18 +84,22 @@ define(function () {
   var dynamicResourceLoader = function (reader, publicationFetcher) {
 
     this.initialize = function () {
-      reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function (iframes) {
-        iframe = iframes[0].contentWindow;
-        startSrcObserve();
-      });
+      if (typeof(window.MutationObserver) === 'function') {
+        reader.on(ReadiumSDK.Events.CONTENT_DOCUMENT_LOADED, function (iframes) {
+          iframe = iframes[0].contentWindow;
+          startSrcObserve();
+        });
 
-      reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageInfo) {
-        spineItem = pageInfo.spineItem;
-      });
+        reader.on(ReadiumSDK.Events.PAGINATION_CHANGED, function (pageInfo) {
+          spineItem = pageInfo.spineItem;
+        });
 
-      currentPublicationFetcher = publicationFetcher;
+        currentPublicationFetcher = publicationFetcher;
 
-      createObserver();
+        createObserver();
+      } else {
+        console.warn("MutationObserver is not available on this browser.")
+      }
     };
   };
 

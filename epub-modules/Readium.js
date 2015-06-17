@@ -12,8 +12,9 @@
 //  prior written permission.
 
 
-define(['require', 'text!version.json', 'console_shim', 'jquery', 'underscore', 'readerView', 'epub-fetch', 'epub-model/package_document_parser', 'epub-fetch/iframe_zip_loader', 'URIjs', 'cryptoJs'],
-    function (require, versionText, console_shim, $, _, readerView, PublicationFetcher, PackageParser, IframeZipLoader, URI, cryptoJs) {
+
+define(['require', 'text!version.json', 'console_shim', 'jquery', 'underscore', 'readerView', 'epub-fetch', 'epub-model/package_document_parser', 'epub-fetch/iframe_zip_loader', 'epub-fetch/dynamic_resource_loader', 'URIjs', 'promise'],
+    function (require, versionText, console_shim, $, _, readerView, PublicationFetcher, PackageParser, IframeZipLoader, DynamicResourceLoader, URI) {
 
     //hack to make URI object global for readers consumption.
     window.URI = URI;
@@ -34,10 +35,9 @@ define(['require', 'text!version.json', 'console_shim', 'jquery', 'underscore', 
         var _contentDocumentTextPreprocessor = function(src, contentDocumentHtml) {
 
             function injectedScript() {
-
-                navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
-                window.parent = window.self;
-                window.top = window.self;
+              navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
+              window.parent = window.self;
+              window.top = window.self;
             }
 
             var sourceParts = src.split("/");
@@ -110,6 +110,9 @@ define(['require', 'text!version.json', 'console_shim', 'jquery', 'underscore', 
                         callback(packageDocument, options);
                     }
                 });
+
+                var dynamicResourceLoader = new DynamicResourceLoader(self.reader, _currentPublicationFetcher);
+                dynamicResourceLoader.initialize();
             });
         };
 

@@ -106,6 +106,8 @@ devDependencies:
 #    "zipjs": 'ryanackley/zip.js'
     "zipjs": "danielweck/zip.js"
 
+    "bowser": 'latest'
+
 # see readium-cfi-js:
 # "requirejs", "almond", "jquery"
 

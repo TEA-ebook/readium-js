@@ -76,7 +76,16 @@ require.config({
             process._RJS_rootDir(2) + '/node_modules/zip-js/WebContent/deflate',
 
         'z-worker':
-            process._RJS_rootDir(2) + '/node_modules/zip-js/WebContent/z-worker'
+            process._RJS_rootDir(2) + '/node_modules/zip-js/WebContent/z-worker',
+
+        'bowser':
+            process._RJS_rootDir(2) + '/node_modules/bowser/bowser',
+
+        'forge':
+            process._RJS_rootDir(2) + '/lib/forge.min',
+
+        'promise':
+            process._RJS_rootDir(2) + '/lib/promise.min'
     },
 
 

@@ -11,7 +11,7 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['require', 'module', './lcp_handler', 'cryptoJs'], function (require, module, LcpHandler) {
+define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (require, module, LcpHandler, SHA1) {
 
     var EncryptionHandler = function (encryptionData) {
         var self = this;
@@ -132,7 +132,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs'], function (require, mo
         var encryptionData = {
             uid: id,
             infos: encryptionInfos,
-            uidHash: window.Crypto.SHA1(unescape(encodeURIComponent(id.trim())), { asBytes: true }),
+            uidHash: SHA1(unescape(encodeURIComponent(id.trim())), { asBytes: true }),
             encryptions: undefined
         };
 

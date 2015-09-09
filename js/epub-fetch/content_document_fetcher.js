@@ -52,6 +52,8 @@ define(
                     resolveDocumentImages(resolutionDeferreds, onerror);
                     resolveDocumentAudios(resolutionDeferreds, onerror);
                     resolveDocumentVideos(resolutionDeferreds, onerror);
+                    resolveDocumentInlineStyleImages(resolutionDeferreds, onerror);
+                    disableHtmlOverflow();
                 }
 
                 resolveDocumentIframes(resolutionDeferreds, onerror);
@@ -96,13 +98,14 @@ define(
                 console.error(err);
             }
 
-            function fetchResourceForElement(resolvedElem, refAttrOrigVal, refAttr, fetchMode, resolutionDeferreds,
+            function fetchResourceForElement(resolvedElem, refAttrOrigResourceUrl, refAttr, fetchMode, resolutionDeferreds,
                                              onerror, resourceDataPreprocessing) {
 
                  function replaceRefAttrInElem(newResourceUrl) {
                      // Store original refAttrVal in a special attribute to provide access to the original href:
-                     $(resolvedElem).data('epubZipOrigHref', refAttrOrigVal);
-                     $(resolvedElem).attr(refAttr, newResourceUrl);
+                     $(resolvedElem).data('epubZipOrigHref', refAttrOrigResourceUrl);
+                     var refAttrOriginalValue = $(resolvedElem).attr(refAttr);
+                     $(resolvedElem).attr(refAttr, refAttrOriginalValue.replace(refAttrOrigResourceUrl, newResourceUrl));
                  }
 
                 var refAttrUri = new URI(refAttrOrigVal);
@@ -441,6 +444,16 @@ define(
                 });
             }
 
+            function resolveDocumentInlineStyleImages(resolutionDeferreds, onerror) {
+                var resolvedElems = $("[style*='background-image']", _contentDocumentDom);
+                resolvedElems.each(function (index, resolvedElem) {
+                    var urlMatched = $(resolvedElem).attr('style').match(/url\(['"]?([^'"]*)['"]?\)/);
+                    if (urlMatched) {
+                        fetchResourceForElement(resolvedElem, urlMatched[1], 'style', 'blob', resolutionDeferreds, onerror);
+                    }
+                });
+            }
+
             function fixSelfClosingTags(resolutionDeferreds) {
                 var resolutionDeferred = $.Deferred();
                 resolutionDeferreds.push(resolutionDeferred);
@@ -453,6 +466,10 @@ define(
                 });
 
                 resolutionDeferred.resolve();
+            }
+
+            function disableHtmlOverflow() {
+                $("html", _contentDocumentDom)[0].style.overflow = "visible";
             }
         };
 

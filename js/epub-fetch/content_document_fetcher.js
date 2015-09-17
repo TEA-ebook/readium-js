@@ -108,14 +108,14 @@ define(
                      $(resolvedElem).attr(refAttr, refAttrOriginalValue.replace(refAttrOrigResourceUrl, newResourceUrl));
                  }
 
-                var refAttrUri = new URI(refAttrOrigVal);
+                var refAttrUri = new URI(refAttrOrigResourceUrl);
                 if (refAttrUri.scheme() !== '') {
-                    console.log("HTTP / absolute scheme res: " + refAttrOrigVal);
+                    console.log("HTTP / absolute scheme res: " + refAttrOrigResourceUrl);
 
                     return;
 
-                } else if (refAttrOrigVal.indexOf("/") == 0) {
-                    console.log("Absolute path res: " + refAttrOrigVal);
+                } else if (refAttrOrigResourceUrl.indexOf("/") == 0) {
+                    console.log("Absolute path res: " + refAttrOrigResourceUrl);
 
                     var HTTPServerRootFolder =
                     window.location ? (
@@ -126,14 +126,14 @@ define(
                       ) : ''
                     ;
 
-                    replaceRefAttrInElem(HTTPServerRootFolder + refAttrOrigVal);
+                    replaceRefAttrInElem(HTTPServerRootFolder + refAttrOrigResourceUrl);
 
                     return;
                 }
 
                 var contentDocumentPathRelativeToBase = _publicationFetcher.convertPathRelativeToPackageToRelativeToBase(_contentDocumentPathRelativeToPackage);
 
-                var resourceUriRelativeToBase = "/" + (new URI(refAttrOrigVal)).absoluteTo(contentDocumentPathRelativeToBase).toString();
+                var resourceUriRelativeToBase = "/" + (new URI(refAttrOrigResourceUrl)).absoluteTo(contentDocumentPathRelativeToBase).toString();
 
 
                 var cachedResourceUrl = _publicationResourcesCache.getResourceURL(resourceUriRelativeToBase);

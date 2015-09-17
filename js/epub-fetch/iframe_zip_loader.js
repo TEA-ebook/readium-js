@@ -35,20 +35,24 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
         this.loadIframe = function(iframe, src, callback, caller, attachedData) {
 
             if (!iframe.baseURI) {
-                
-                if (isIE && iframe.ownerDocument.defaultView.frameElement) {
-                    
-                    //console.debug(iframe.ownerDocument.defaultView.location);
-                    iframe.baseURI = iframe.ownerDocument.defaultView.frameElement.getAttribute("data-loadUri");
-                    
-                    console.log("EPUB doc iframe src (BEFORE):");
-                    console.log(src);
-                    src = new URI(src).absoluteTo(iframe.baseURI).search('').hash('').toString();
+                try {
+                    if (isIE && iframe.ownerDocument.defaultView.frameElement) {
+
+                        //console.debug(iframe.ownerDocument.defaultView.location);
+                        iframe.baseURI = iframe.ownerDocument.defaultView.frameElement.getAttribute("data-loadUri");
+
+                        console.log("EPUB doc iframe src (BEFORE):");
+                        console.log(src);
+                        src = new URI(src).absoluteTo(iframe.baseURI).search('').hash('').toString();
+                    }
+                    else if (typeof location !== 'undefined') {
+                        iframe.baseURI = location.href + "";
+                    }
                 }
-                else if (typeof location !== 'undefined') {
+                catch (error) {
                     iframe.baseURI = location.href + "";
                 }
-                
+
                 console.error("!iframe.baseURI => " + iframe.baseURI);
             }
             

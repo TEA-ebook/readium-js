@@ -46,7 +46,7 @@
   },
   "devDependencies": {
     "crypto-js": "latest",
-    "zipjs": "danielweck/zip.js",
+    "zipjs": "johanpoirier/zip.js#94cea112b4",
     "bowser": "latest",
     "requirejs-text": "latest",
     "gift": "latest"

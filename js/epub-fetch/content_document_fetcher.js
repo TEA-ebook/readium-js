@@ -64,6 +64,7 @@ define(
                 resolveDocumentEmbeddedStylesheets(resolutionDeferreds, onerror);
 
                 fixSelfClosingTags(resolutionDeferreds);
+                fixBrowserStylesheets(resolutionDeferreds);
 
                 $.when.apply($, resolutionDeferreds).done(function () {
                     resolvedDocumentCallback(_contentDocumentDom);
@@ -452,6 +453,18 @@ define(
                         fetchResourceForElement(resolvedElem, urlMatched[1], 'style', 'blob', resolutionDeferreds, onerror);
                     }
                 });
+            }
+
+            function fixBrowserStylesheets(resolutionDeferreds) {
+                var resolutionDeferred = $.Deferred();
+                resolutionDeferreds.push(resolutionDeferred);
+
+                var resolvedElems = $('figure', _contentDocumentDom);
+                resolvedElems.each(function (index, element) {
+                   $(element).css("margin", "0");
+                });
+
+                resolutionDeferred.resolve();
             }
 
             function fixSelfClosingTags(resolutionDeferreds) {

@@ -282,7 +282,9 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
                     img.style.height = 'auto';
                 }
                 var parent = img.parentNode;
-                while (parent.tagName !== undefined && parent.tagName.toLowerCase() !== "body") {
+                while (parent.tagName !== undefined
+                && parent.tagName.toLowerCase() !== "body"
+                && parent.tagName.toLowerCase() !== "p") {
                     if (!parent.style.height || parent.style.height === "") {
                         parent.style.height = '100%';
                     }

@@ -76,7 +76,7 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
 
                     getCurrentResourceFetcher().fetchContentDocument(attachedData, loadedDocumentUri,
                         function (resolvedContentDocumentDom) {
-                            fixImgRatio(resolvedContentDocumentDom);
+                            htmlDomPostProcessing(resolvedContentDocumentDom);
                             self._loadIframeWithDocument(iframe,
                                 attachedData,
                                 resolvedContentDocumentDom.documentElement.outerHTML,
@@ -94,7 +94,7 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
                           callback.call(caller, false, attachedData);
                       } else {
                           self._loadIframeWithDocument(iframe, attachedData, contentDocumentHtml, function () {
-                              fixImgRatio(iframe.contentDocument);
+                              htmlDomPostProcessing(iframe.contentDocument);
                               callback.call(caller, true, attachedData);
                           });
                       }
@@ -274,7 +274,13 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
             });
         }
 
-        function fixImgRatio(contentDocumentDom) {
+        function htmlDomPostProcessing(contentDocumentDom) {
+            processImages(contentDocumentDom);
+            processBrowserStylesheets(contentDocumentDom);
+            processHtmlOverflow(contentDocumentDom);
+        }
+
+        function processImages(contentDocumentDom) {
             var resolvedElems = $('img,svg', contentDocumentDom);
             if (resolvedElems.length === 1) {
                 var img = resolvedElems[0];
@@ -291,6 +297,21 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
                     parent = parent.parentNode;
                 }
             }
+
+            resolvedElems.each(function (index, element) {
+                $(element).attr('draggable', 'false');
+            });
+        }
+
+        function processBrowserStylesheets(contentDocumentDom) {
+            var resolvedElems = $('figure', contentDocumentDom);
+            resolvedElems.each(function (index, element) {
+                $(element).css("margin", "0");
+            });
+        }
+
+        function processHtmlOverflow(contentDocumentDom) {
+            $("html", contentDocumentDom)[0].style.overflow = "visible";
         }
     };
 

@@ -53,7 +53,6 @@ define(
                     resolveDocumentAudios(resolutionDeferreds, onerror);
                     resolveDocumentVideos(resolutionDeferreds, onerror);
                     resolveDocumentInlineStyleImages(resolutionDeferreds, onerror);
-                    disableHtmlOverflow();
                 }
 
                 resolveDocumentIframes(resolutionDeferreds, onerror);
@@ -64,7 +63,6 @@ define(
                 resolveDocumentEmbeddedStylesheets(resolutionDeferreds, onerror);
 
                 fixSelfClosingTags(resolutionDeferreds);
-                fixBrowserStylesheets(resolutionDeferreds);
 
                 $.when.apply($, resolutionDeferreds).done(function () {
                     resolvedDocumentCallback(_contentDocumentDom);
@@ -455,18 +453,6 @@ define(
                 });
             }
 
-            function fixBrowserStylesheets(resolutionDeferreds) {
-                var resolutionDeferred = $.Deferred();
-                resolutionDeferreds.push(resolutionDeferred);
-
-                var resolvedElems = $('figure', _contentDocumentDom);
-                resolvedElems.each(function (index, element) {
-                   $(element).css("margin", "0");
-                });
-
-                resolutionDeferred.resolve();
-            }
-
             function fixSelfClosingTags(resolutionDeferreds) {
                 var resolutionDeferred = $.Deferred();
                 resolutionDeferreds.push(resolutionDeferred);
@@ -479,10 +465,6 @@ define(
                 });
 
                 resolutionDeferred.resolve();
-            }
-
-            function disableHtmlOverflow() {
-                $("html", _contentDocumentDom)[0].style.overflow = "visible";
             }
         };
 

@@ -385,6 +385,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
 
                     // get LCP license
                     if (_encryptionHandler.isLcpEncryptionSpecified()) {
+                        packageMetadata.protection = 'LCP';
                         self.getLicenseLcp(function (license) {
                             _encryptionHandler.checkLicense(license, settingFinishedCallback, errorCb);
                         }, errorCb);

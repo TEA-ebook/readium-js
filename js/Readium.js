@@ -18,7 +18,7 @@ define(['text!version.json', 'jquery', 'underscore', 'readium_shared_js/views/re
     function (versionText, $, _, ReaderView, PublicationFetcher,
               PackageParser, IframeZipLoader, IframeLoader) {
 
-    var Readium = function(readiumOptions, readerOptions){
+    var Readium = function(readiumOptions, readerOptions, onError) {
 
         var _options = { mathJaxUrl: readerOptions.mathJaxUrl };
 
@@ -83,11 +83,11 @@ define(['text!version.json', 'jquery', 'underscore', 'readium_shared_js/views/re
                 cacheSizeEvictThreshold = readiumOptions.cacheSizeEvictThreshold;
             }
 
-            _currentPublicationFetcher = new PublicationFetcher(bookRoot, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, readerOptions);
+            _currentPublicationFetcher = new PublicationFetcher(bookRoot, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, readerOptions, onError);
 
             _currentPublicationFetcher.initialize(function(resourceFetcher) {
 
-                var _packageParser = new PackageParser(bookRoot, _currentPublicationFetcher);
+                var _packageParser = new PackageParser(bookRoot, _currentPublicationFetcher, onError);
 
                 _packageParser.parse(function(packageDocument){
                     var openBookOptions = readiumOptions.openBookOptions || {};

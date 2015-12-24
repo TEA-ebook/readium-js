@@ -13,10 +13,10 @@
 
 define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (require, module, LcpHandler, SHA1) {
 
-    var EncryptionHandler = function (encryptionData) {
+    var EncryptionHandler = function (encryptionData, onError) {
         var self = this;
 
-        var lcpHandler = encryptionData.infos ? new LcpHandler(encryptionData.infos, encryptionData.encryptions) : false;
+        var lcpHandler = encryptionData.infos ? new LcpHandler(encryptionData.infos, onError) : false;
 
         var ENCRYPTION_METHODS = {
             'http://www.idpf.org/2008/embedding': embeddedFontDeobfuscateIdpf,
@@ -150,7 +150,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             var cipherReference = $('CipherReference', encryptedData);
             cipherReference.each(function (index, CipherReference) {
                 var cipherReferenceURI = $(CipherReference).attr('URI');
-                console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' + cipherReferenceURI + (retrievalMethod ? ' with key ' + retrievalMethod : ''));
+                //console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' + cipherReferenceURI + (retrievalMethod ? ' with key ' + retrievalMethod : ''));
 
                 if (!encryptionData.encryptions) {
                     encryptionData.encryptions = {};

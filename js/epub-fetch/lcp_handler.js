@@ -17,11 +17,14 @@ define(['forge', 'promise'], function (forge, es6Promise) {
 
     es6Promise.polyfill();
 
-    var LcpHandler = function (encryptionInfos) {
+    var LcpHandler = function (encryptionInfos, onError) {
 
         // private vars
-        var userKey = forge.util.hexToBytes(encryptionInfos.hash), contentKey;
-
+        try {
+            var userKey = forge.util.hexToBytes(encryptionInfos.hash), contentKey;
+        } catch(e) {
+            onError("encryption key is null or not defined");
+        }
 
         // LCP step by step verification functions
 
@@ -32,7 +35,7 @@ define(['forge', 'promise'], function (forge, es6Promise) {
                 // Decrypt and compare it to license ID
                 decipher(userKey, atob(userKeyCheck)).then(function (userKeyCheckDecrypted) {
                     if (license.id === userKeyCheckDecrypted.data) {
-                        console.info("User key is valid");
+                        //console.info("User key is valid");
                         resolve();
                     } else {
                         reject(Error("User key is invalid"));
@@ -158,7 +161,7 @@ define(['forge', 'promise'], function (forge, es6Promise) {
                     reject('Invalid Signature');
                 }
 
-                console.info("Signature is valid");
+                //console.info("Signature is valid");
 
                 resolve();
             });
@@ -276,7 +279,7 @@ define(['forge', 'promise'], function (forge, es6Promise) {
             }).then(function () {
                 return checkLicenseCertificate(license, forge.pki.certificateFromAsn1(forge.asn1.fromDer(atob(license.signature.certificate))));
             }).then(function () {
-                console.info("License is valid");
+                //console.info("License is valid");
                 return new getContentKey(license);
             }).then(function (bookContentKey) {
                 contentKey = bookContentKey;

@@ -211,10 +211,13 @@ define(
 
 
                 if (cachedResourceURL) {
+                    var cssUrlFetchDeferred = $.Deferred();
+                    cssResourceDownloadDeferreds.push(cssUrlFetchDeferred);
                     stylesheetCssResourceUrlsMap[origMatchedUrlString] = {
                         isStyleSheetResource: isStyleSheetResource,
                         resourceObjectURL: cachedResourceURL
                     };
+                    cssUrlFetchDeferred.resolve();
                 } else {
                     var cssUrlFetchDeferred = $.Deferred();
                     cssResourceDownloadDeferreds.push(cssUrlFetchDeferred);

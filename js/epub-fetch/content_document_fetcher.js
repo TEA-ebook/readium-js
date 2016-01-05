@@ -286,32 +286,35 @@ define(
                 });
 
                 if (cssResourceDownloadDeferreds.length > 0) {
-                    $.when.apply($, cssResourceDownloadDeferreds).done(function () {
-                        for (var origMatchedUrlString in stylesheetCssResourceUrlsMap) {
-                            var processedResourceDescriptor = stylesheetCssResourceUrlsMap[origMatchedUrlString];
-
-
-                            var processedUrlString;
-                            if (processedResourceDescriptor.isStyleSheetResource) {
-                                processedUrlString = '@import "' + processedResourceDescriptor.resourceObjectURL + '"';
-                            } else {
-                                processedUrlString = "url('" + processedResourceDescriptor.resourceObjectURL + "')";
-                            }
-                            var origMatchedUrlStringEscaped = origMatchedUrlString.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g,
-                                "\\$&");
-                            var origMatchedUrlStringRegExp = new RegExp(origMatchedUrlStringEscaped, 'g');
-                            //noinspection JSCheckFunctionSignatures
-                            styleSheetResourceData =
-                                styleSheetResourceData.replace(origMatchedUrlStringRegExp, processedUrlString, 'g');
-
-                        }
-                        callback(styleSheetResourceData);
+                    $.when.apply($, cssResourceDownloadDeferreds).done(function() {
+                        replaceResourceUris(styleSheetResourceData, stylesheetCssResourceUrlsMap, callback);
                     });
                 } else {
-                    callback(styleSheetResourceData);
+                    replaceResourceUris(styleSheetResourceData, stylesheetCssResourceUrlsMap, callback);
                 }
             }
 
+            function replaceResourceUris(styleSheetResourceData, stylesheetCssResourceUrlsMap, callback) {
+                for (var origMatchedUrlString in stylesheetCssResourceUrlsMap) {
+                    var processedResourceDescriptor = stylesheetCssResourceUrlsMap[origMatchedUrlString];
+
+
+                    var processedUrlString;
+                    if (processedResourceDescriptor.isStyleSheetResource) {
+                        processedUrlString = '@import "' + processedResourceDescriptor.resourceObjectURL + '"';
+                    } else {
+                        processedUrlString = "url('" + processedResourceDescriptor.resourceObjectURL + "')";
+                    }
+                    var origMatchedUrlStringEscaped = origMatchedUrlString.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g,
+                        "\\$&");
+                    var origMatchedUrlStringRegExp = new RegExp(origMatchedUrlStringEscaped, 'g');
+                    //noinspection JSCheckFunctionSignatures
+                    styleSheetResourceData =
+                        styleSheetResourceData.replace(origMatchedUrlStringRegExp, processedUrlString, 'g');
+
+                }
+                callback(styleSheetResourceData);
+            }
 
             function resolveResourceElements(elemName, refAttr, fetchMode, resolutionDeferreds, onerror,
                                              resourceDataPreprocessing) {

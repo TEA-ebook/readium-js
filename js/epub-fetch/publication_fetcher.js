@@ -127,13 +127,10 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
          * Determine whether the media assets (audio, video, images) within content documents require special
          * programmatic handling.
          * @returns {*} true if content documents fetched using this fetcher require programmatic fetching
-         * of media assets. Typically needed for zipped EPUBs.
-         *
-         * false if paths to media assets are accessible directly for the browser through their paths relative to
-         * the base URI of their content document.
+         * of media assets. Typically needed for zipped EPUBs or encrypted exploded EPUBs.
          */
         this.shouldFetchMediaAssetsProgrammatically = function() {
-            return _shouldConstructDomProgrammatically && !isExploded();
+            return _shouldConstructDomProgrammatically;
         };
 
         this.getEbookURL = function() {
@@ -204,7 +201,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
         };
 
         this.getLicenseLcp = function (callback, onerror) {
-            self.getFileContentsFromPackage('META-INF/license.lcpl', function (fileContents) {
+            self.getFileContentsFromPackage('/META-INF/license.lcpl', function (fileContents) {
                 var licenseJson = JSON.parse(fileContents);
                 callback(licenseJson);
             }, onerror);
@@ -371,8 +368,6 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                 pathRelativeToEpubRoot = pathRelativeToEpubRoot.substr(1);
             }
 
-            var decryptionFunction = this.getDecryptionFunctionForRelativePath(pathRelativeToEpubRoot);
-
             var fetchFunction = _resourceFetcher.fetchFileContentsText;
             if (fetchMode === 'blob') {
                 fetchFunction = _resourceFetcher.fetchFileContentsBlob;
@@ -380,7 +375,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                 console.error("data64uri??");
                 fetchFunction = _resourceFetcher.fetchFileContentsData64Uri;
             }
-            fetchFunction.call(_resourceFetcher, pathRelativeToEpubRoot, decryptionFunction, fetchCallback, onerror);
+            fetchFunction.call(_resourceFetcher, pathRelativeToEpubRoot, fetchCallback, onerror);
         };
 
 
@@ -389,49 +384,15 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
             self.getXmlFileDom(self.convertPathRelativeToPackageToRelativeToBase(filePath), callback, errorCallback);
         };
 
-        function readEncryptionData(callback) {
-            self.getXmlFileDom('META-INF/encryption.xml', function (encryptionDom, error) {
-
-                if(error) {
-                    
-                    _encryptionHandler = new EncryptionHandler(undefined);
-                    callback();
-                }
-                else {
-
-                    var encryptions = [];
-
-
-                    var encryptedData = $('EncryptedData', encryptionDom);
-                    encryptedData.each(function (index, encryptedData) {
-                        var encryptionAlgorithm = $('EncryptionMethod', encryptedData).first().attr('Algorithm');
-
-                        encryptions.push({algorithm: encryptionAlgorithm});
-
-                        // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
-                        var cipherReference = $('CipherReference', encryptedData);
-                        cipherReference.each(function (index, CipherReference) {
-                            var cipherReferenceURI = $(CipherReference).attr('URI');
-                            console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
-                                cipherReferenceURI);
-                            encryptions[cipherReferenceURI] = encryptionAlgorithm;
-                        });
-                    });
-                }
-
-            });
-        }
-
         // Currently needed for deobfuscating fonts and LCP
         this.setPackageMetadata = function(packageMetadata, settingFinishedCallback) {
 
             var errorCb = function (error) {
                 console.error(error);
-                _encryptionHandler = new EncryptionHandler(undefined);
                 settingFinishedCallback();
             };
 
-            self.getXmlFileDom('META-INF/encryption.xml', function (encryptionDom) {
+            self.getXmlFileDom('/META-INF/encryption.xml', function (encryptionDom) {
                 var encryptionInfos = options.misc;
                 encryptionInfos.master = options.el;
 

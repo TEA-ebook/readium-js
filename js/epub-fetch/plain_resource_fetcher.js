@@ -69,39 +69,14 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
             return url + (url.charAt(url.length-1) == '/' ? "" : "/") + pathRelativeToPackageRoot;
         };
 
-        this.fetchFileContentsText = function (pathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
+        this.fetchFileContentsText = function(pathRelativeToPackageRoot, fetchCallback, onerror) {
             var fileUrl = self.resolveURI(pathRelativeToPackageRoot);
 
-            if (onerror === undefined) {
-                onerror = fetchCallback;
-                fetchCallback = decryptionFunction;
-                decryptionFunction = false;
-            }
+            var decryptionFunction = parentFetcher.getDecryptionFunctionForRelativePath(pathRelativeToPackageRoot);
 
             if (typeof fileUrl === 'undefined') {
                 throw 'Fetched file URL is undefined!';
             }
-
-            $.ajax({
-                // encoding: "UTF-8",
-                // mimeType: "text/plain; charset=UTF-8",
-                // beforeSend: function( xhr ) {
-                //     xhr.overrideMimeType("text/plain; charset=UTF-8");
-                // },
-                isLocal: fileUrl.indexOf("http") === 0 ? false : true,
-                url: fileUrl,
-                dataType: 'text', //https://api.jquery.com/jQuery.ajax/
-                async: true,
-                success: function (result) {
-                    fetchCallback(result);
-                },
-                error: function (xhr, status, errorThrown) {
-                    onerror(new Error(errorThrown));
-                }
-            });
-        };
-
-        this.fetchFileContentsBlob = function(pathRelativeToPackageRoot, fetchCallback, onerror) {
 
             if (decryptionFunction) {
                 var type = ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot);
@@ -123,35 +98,14 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
                         fetchCallback(result);
                     },
                     error: function (xhr, status, errorThrown) {
-                        console.error('Error when AJAX fetching ' + fileUrl);
-                        console.error(status);
-                        console.error(errorThrown);
-
-                        // // isLocal = false with custom URI scheme / protocol results in false fail on Firefox (Chrome okay)
-                        // if (status === "error" && (!errorThrown || !errorThrown.length) && xhr.responseText && xhr.responseText.length)
-                        // {
-                        //     console.error(xhr);
-                        //     if (typeof xhr.getResponseHeader !== "undefined") console.error(xhr.getResponseHeader("Content-Type"));
-                        //     if (typeof xhr.getAllResponseHeaders !== "undefined") console.error(xhr.getAllResponseHeaders());
-                        //     if (typeof xhr.responseText !== "undefined") console.error(xhr.responseText);
-                        //
-                        //     // success
-                        //     fetchCallback(xhr.responseText);
-                        //     return;
-                        // }
-
-                        onerror(errorThrown);
+                        onerror(new Error(errorThrown));
                     }
                 });
             }
         };
 
-        this.fetchFileContentsBlob = function (pathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
-            if (onerror === undefined) {
-                onerror = fetchCallback;
-                fetchCallback = decryptionFunction;
-                decryptionFunction = false;
-            }
+        this.fetchFileContentsBlob = function(pathRelativeToPackageRoot, fetchCallback, onerror) {
+            var decryptionFunction = parentFetcher.getDecryptionFunctionForRelativePath(pathRelativeToPackageRoot);
 
             fetchFileContents(pathRelativeToPackageRoot, function (contentsArrayBuffer) {
                 var type = ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot);

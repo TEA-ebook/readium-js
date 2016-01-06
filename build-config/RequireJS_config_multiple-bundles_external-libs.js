@@ -23,11 +23,11 @@ require.config({
         {
             name: "readium-external-libs",
             create: true,
-            include: ["mime-types", "zip", "zip-ext", "zip-fs", "inflate", "cryptoJs/sha1", "cryptoJs/core",
-            'jquery',
-            'underscore', 'URIjs', 'punycode', 'SecondLevelDomains', 'IPv6',
-            'jquerySizes', 'domReady', 'eventEmitter', 'console_shim',
-            'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-cssclassapplier', 'rangy-position']
+            include: ["mime-types", "zip", "zip-ext", "zip-fs", "cryptoJs/sha1", "cryptoJs/core",
+                'jquery',
+                'underscore', 'URIjs', 'punycode', 'SecondLevelDomains', 'IPv6',
+                'jquerySizes', 'domReady', 'eventEmitter', 'console_shim',
+                'rangy', 'rangy-core', 'rangy-textrange', 'rangy-highlighter', 'rangy-cssclassapplier', 'rangy-position']
         }
     ]
 });

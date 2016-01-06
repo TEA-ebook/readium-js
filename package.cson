@@ -303,15 +303,7 @@ scripts:
 
         &&
         npm run cpy
-            build-output/_multiple-bundles/z-worker.js.map
-            build-output/
-        &&
-        npm run cpy
-            build-output/_multiple-bundles/deflate.js.map
-            build-output/
-        &&
-        npm run cpy
-            build-output/_multiple-bundles/inflate.js.map
+            build-output/_multiple-bundles/*.js.map
             build-output/
         &&
         npm run rimraf

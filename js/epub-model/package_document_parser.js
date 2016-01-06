@@ -41,7 +41,9 @@ define(['jquery', 'underscore', '../epub-fetch/markup_parser', 'URIjs', './packa
         publicationFetcher.getPackageDom(function(packageDom){
             _xmlDom = packageDom;
             _deferredXmlDom.resolve(packageDom);
-        }, onError);
+        }, function() {
+            _deferredXmlDom.resolve(undefined);
+        });
 
         function fillSmilData(packageDocument, callback) {
 
@@ -59,6 +61,11 @@ define(['jquery', 'underscore', '../epub-fetch/markup_parser', 'URIjs', './packa
         this.parse = function(callback) {
 
             _deferredXmlDom.done(function (xmlDom) {
+                if (!xmlDom) {
+                    callback(undefined);
+                    return;
+                }
+                
                 var metadata = getMetadata(xmlDom);
 
                 var spineElem = xmlDom.getElementsByTagNameNS("*", "spine")[0];
@@ -117,7 +124,7 @@ define(['jquery', 'underscore', '../epub-fetch/markup_parser', 'URIjs', './packa
 
                 }, function (err) {
 
-                    console.log("com.apple.ibooks.display-options.xml not found");
+                    //console.log("com.apple.ibooks.display-options.xml not found");
                     dff.resolve();
                 });
             }

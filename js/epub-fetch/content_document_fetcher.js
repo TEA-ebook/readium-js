@@ -49,13 +49,24 @@ define(
                 var resolutionDeferreds = [];
 
                 if (_publicationFetcher.shouldFetchMediaAssetsProgrammatically()) {
+                    
+                    console.log("fetchMediaAssetsProgrammatically ...");
+            
                     resolveDocumentImages(resolutionDeferreds, onerror);
                     resolveDocumentAudios(resolutionDeferreds, onerror);
                     resolveDocumentVideos(resolutionDeferreds, onerror);
                     resolveDocumentInlineStyleImages(resolutionDeferreds, onerror);
+
+                    resolveResourceElements('object', 'data', 'blob', resolutionDeferreds, onerror);
                 }
 
-                resolveDocumentIframes(resolutionDeferreds, onerror);
+                // The code below is not needed since fix for https://github.com/readium/readium-js/issues/107
+                // See https://github.com/readium/readium-js/issues/105
+                //resolveDocumentIframes(resolutionDeferreds, onerror);
+                // resolveResourceElements('iframe', 'src', 'blob', resolutionDeferreds, onerror,
+                // function(data, uri, callback) {
+                //     callback(data);
+                // });
 
                 // TODO: resolution (e.g. using DOM mutation events) of scripts loaded dynamically by scripts
                 resolveDocumentScripts(resolutionDeferreds, onerror);
@@ -65,6 +76,7 @@ define(
                 fixSelfClosingTags(resolutionDeferreds);
 
                 $.when.apply($, resolutionDeferreds).done(function () {
+                    console.log("DOM BLOB URi DONE: " + loadedDocumentUri);
                     resolvedDocumentCallback(_contentDocumentDom);
                 });
 
@@ -97,14 +109,14 @@ define(
                 console.error(err);
             }
 
-            function fetchResourceForElement(resolvedElem, refAttrOrigResourceUrl, refAttr, fetchMode, resolutionDeferreds,
-                                             onerror, resourceDataPreprocessing) {
+            function fetchResourceForElement(resolvedElem, refAttrOrigResourceUrl, refAttr, fetchMode, resolutionDeferreds, onerror, resourceDataPreprocessing) {
 
                  function replaceRefAttrInElem(newResourceUrl) {
                      // Store original refAttrVal in a special attribute to provide access to the original href:
-                     $(resolvedElem).data('epubZipOrigHref', refAttrOrigResourceUrl);
+                     //$(resolvedElem).data('epubZipOrigHref', refAttrOrigResourceUrl);
                      var refAttrOriginalValue = $(resolvedElem).attr(refAttr);
                      $(resolvedElem).attr(refAttr, refAttrOriginalValue.replace(refAttrOrigResourceUrl, newResourceUrl));
+
                  }
 
                 var refAttrUri = new URI(refAttrOrigResourceUrl);
@@ -175,7 +187,10 @@ define(
                             } else {
                                 replaceResourceURL(resourceData);
                             }
-                        }, onerror);
+                        }, function() {
+                            resolutionDeferred.resolve();
+                            onerror.apply(this, arguments);
+                        });
                 }
             }
 
@@ -231,7 +246,6 @@ define(
                         cssUrlFetchDeferred.resolve();
                     };
                     var fetchErrorCallback = function (error) {
-                        _handleError(error);
                         cssUrlFetchDeferred.resolve();
                     };
 
@@ -345,86 +359,6 @@ define(
 
             function resolveDocumentScripts(resolutionDeferreds, onerror) {
                 resolveResourceElements('script', 'src', 'blob', resolutionDeferreds, onerror);
-            }
-
-            function resolveDocumentIframes(resolutionDeferreds, onerror) {
-
-                // resolveResourceElements('iframe', 'src', 'blob', resolutionDeferreds, onerror,
-                // function(data, uri, callback) {
-
-                //     callback(data);
-                // });
-
-                // The code below is not needed since fix for https://github.com/readium/readium-js/issues/107
-                // See https://github.com/readium/readium-js/issues/105
-
-//                 var elemName = 'iframe';
-//                 var refAttr = 'src';
-//                 var fetchMode = 'blob';
-
-//                 var resolvedElems = $(elemName + '[' + refAttr.replace(':', '\\:') + ']', _contentDocumentDom);
-
-//                 resolvedElems.each(function (index, resolvedElem) {
-//                     var refAttrOrigVal = $(resolvedElem).attr(refAttr);
-//                     console.log("refAttrOrigVal: " + refAttrOrigVal);
-//                     alert(refAttrOrigVal);
-
-//                     var baseUri = $(resolvedElem)[0].baseURI;
-//                     console.log("baseUri: " + baseUri);
-
-//                     console.log("_contentDocumentPathRelativeToPackage: " + _contentDocumentPathRelativeToPackage);
-
-//                     // var refAttrOrigVal_RelativeToPackage = (new URI(refAttrOrigVal)).absoluteTo(_contentDocumentPathRelativeToPackage).toString();
-//                     // console.log("refAttrOrigVal_RelativeToPackage: " + refAttrOrigVal_RelativeToPackage);
-
-//                     var contentDocumentPathRelativeToBase = _publicationFetcher.convertPathRelativeToPackageToRelativeToBase(_contentDocumentPathRelativeToPackage);
-//                     console.log("contentDocumentPathRelativeToBase: " + contentDocumentPathRelativeToBase);
-
-//                     var refAttrOrigVal_RelativeToBase = (new URI(refAttrOrigVal)).absoluteTo(contentDocumentPathRelativeToBase).toString();
-//                     console.log("refAttrOrigVal_RelativeToBase: " + refAttrOrigVal_RelativeToBase);
-
-//                     var packageFullPath = _publicationFetcher.getPackageFullPathRelativeToBase();
-//                     console.log("packageFullPath: " + packageFullPath);
-
-
-//                     var refAttrOrigVal_RelativeToPackage = (new URI("/"+refAttrOrigVal_RelativeToBase)).relativeTo("/"+packageFullPath).toString();
-//                     console.log("refAttrOrigVal_RelativeToPackage: " + refAttrOrigVal_RelativeToPackage);
-
-
-//                     var textResourceContentType = ContentTypeDiscovery.identifyContentTypeFromFileName(refAttrOrigVal);
-
-//                     // var loadedDocumentUri = new URI(refAttrOrigVal).absoluteTo($(resolvedElem)[0].baseURI).search('').hash('').toString();
-//                     //
-//                     // var resourceUriRelativeToBase = "/" + (new URI(refAttrOrigVal)).absoluteTo(contentDocumentPathRelativeToBase).toString();
-
-// console.log("contentWindow");
-// console.debug($(resolvedElem)[0].contentWindow);
-
-//                     var iframeloader = new iFrameZipLoader(
-//                       function(){return _publicationFetcher; },
-//                       _contentDocumentTextPreprocessor);
-
-//                     //iframe, src, callback, caller, attachedData
-//                     iframeloader.loadIframe(
-//                       $(resolvedElem)[0],
-//                       refAttrOrigVal,
-//                       function(caller, b, attData) {
-// console.log("LOADED! " + refAttrOrigVal);
-
-//                           $(resolvedElem).data('epubZipOrigHref', refAttrOrigVal);
-//                       },
-//                       self,
-//                       {
-//                         spineItem:
-//                         {
-//                           media_type: textResourceContentType, //"application/xhtml+xml",
-//                           href: refAttrOrigVal_RelativeToPackage
-//                         }
-//                       }
-//                     );
-
-//                     //fetchResourceForElement(resolvedElem, refAttrOrigVal, refAttr, fetchMode, resolutionDeferreds, onerror, resourceDataPreprocessing);
-//                 });
             }
 
             function resolveDocumentLinkStylesheets(resolutionDeferreds, onerror) {

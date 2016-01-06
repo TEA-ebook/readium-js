@@ -13,7 +13,10 @@
 
 define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, ContentTypeDiscovery) {
 
-    var PlainResourceFetcher = function (parentFetcher, baseUrl) {
+    var PlainResourceFetcher = function(parentFetcher) {
+
+        var ebookURL = parentFetcher.getEbookURL();
+        var ebookURL_filepath = parentFetcher.getEbookURL_FilePath();
 
         var self = this;
 
@@ -42,7 +45,28 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
         // PUBLIC API
 
         this.resolveURI = function (pathRelativeToPackageRoot) {
-            return baseUrl + "/" + pathRelativeToPackageRoot;
+    
+            var pathRelativeToPackageRootUri = undefined;
+            try {
+                pathRelativeToPackageRootUri = new URI(pathRelativeToPackageRoot);
+            } catch(err) {
+                console.error(err);
+                console.log(pathRelativeToPackageRoot);
+            }
+            if (pathRelativeToPackageRootUri && pathRelativeToPackageRootUri.is("absolute")) return pathRelativeToPackageRoot; //pathRelativeToPackageRootUri.scheme() == "http://", "https://", "data:", etc.
+
+
+            var url = ebookURL_filepath;
+            
+            try {
+                //url = new URI(relativeUrl).absoluteTo(url).search('').hash('').toString();
+                url = new URI(url).search('').hash('').toString();
+            } catch(err) {
+                console.error(err);
+                console.log(url);
+            }
+            
+            return url + (url.charAt(url.length-1) == '/' ? "" : "/") + pathRelativeToPackageRoot;
         };
 
         this.fetchFileContentsText = function (pathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
@@ -57,6 +81,27 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
             if (typeof fileUrl === 'undefined') {
                 throw 'Fetched file URL is undefined!';
             }
+
+            $.ajax({
+                // encoding: "UTF-8",
+                // mimeType: "text/plain; charset=UTF-8",
+                // beforeSend: function( xhr ) {
+                //     xhr.overrideMimeType("text/plain; charset=UTF-8");
+                // },
+                isLocal: fileUrl.indexOf("http") === 0 ? false : true,
+                url: fileUrl,
+                dataType: 'text', //https://api.jquery.com/jQuery.ajax/
+                async: true,
+                success: function (result) {
+                    fetchCallback(result);
+                },
+                error: function (xhr, status, errorThrown) {
+                    onerror(new Error(errorThrown));
+                }
+            });
+        };
+
+        this.fetchFileContentsBlob = function(pathRelativeToPackageRoot, fetchCallback, onerror) {
 
             if (decryptionFunction) {
                 var type = ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot);

@@ -14,7 +14,7 @@
 
 define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore', './discover_content_type'], function(URI, bowser, IFrameLoader, _, ContentTypeDiscovery){
 
-    var zipIframeLoader = function( getCurrentResourceFetcher, contentDocumentTextPreprocessor) {
+    var zipIframeLoader = function(getCurrentResourceFetcher, contentDocumentTextPreprocessor) {
 
         var isIE = (window.navigator.userAgent.indexOf("Trident") > 0 || window.navigator.userAgent.indexOf("Edge") > 0);
             
@@ -74,19 +74,22 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
             var shouldConstructDomProgrammatically = getCurrentResourceFetcher().shouldConstructDomProgrammatically();
             if (shouldConstructDomProgrammatically) {
 
-                    getCurrentResourceFetcher().fetchContentDocument(attachedData, loadedDocumentUri,
-                        function (resolvedContentDocumentDom) {
-                            htmlDomPostProcessing(resolvedContentDocumentDom);
-                            self._loadIframeWithDocument(iframe,
-                                attachedData,
-                                resolvedContentDocumentDom.documentElement.outerHTML,
-                                function () {
-                                    callback.call(caller, true, attachedData);
-                                });
-                        }, function (err) {
-                            callback.call(caller, false, attachedData);
-                        }
-                    );
+                console.log("shouldConstructDomProgrammatically...");
+
+                getCurrentResourceFetcher().fetchContentDocument(attachedData, loadedDocumentUri,
+                    function (resolvedContentDocumentDom) {
+                        htmlDomPostProcessing(resolvedContentDocumentDom);
+                        self._loadIframeWithDocument(iframe,
+                            attachedData,
+                            resolvedContentDocumentDom.documentElement.outerHTML,
+                            function () {
+                                callback.call(caller, true, attachedData);
+                            });
+                    }, function (err) {
+                        callback.call(caller, false, attachedData);
+                    }
+                );
+
             } else {
                 fetchContentDocument(loadedDocumentUri, function (contentDocumentHtml) {
                       if (!contentDocumentHtml) {
@@ -157,8 +160,23 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
                         
                         // console.log(child_iframe.location);
                         
-                        var childSrc = child_iframe.frameElement.getAttribute("data-src");
+                        var childSrc = undefined;
+                        
+                        try{
+                            childSrc = child_iframe.frameElement.getAttribute("data-src");
+                        } catch(err) {
+                            // HTTP(S) cross-origin access?
+                            console.warn(err);
+                            continue;
+                        }
                         // console.log(childSrc);
+                        
+                        if (!childSrc) {
+                            if (child_iframe.frameElement.localName == "iframe") {
+                                console.error("IFRAME data-src missing?!");
+                            }
+                            continue;
+                        }
                             
                         // console.debug(attachedData);
                         var contentDocumentPathRelativeToPackage = attachedData.spineItem.href; 

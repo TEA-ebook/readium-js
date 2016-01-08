@@ -299,24 +299,7 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
         }
 
         function processImages(contentDocumentDom) {
-            var resolvedElems = $('img,svg', contentDocumentDom);
-            if (resolvedElems.length === 1) {
-                var img = resolvedElems[0];
-                if (!img.hasAttribute("height")) {
-                    img.style.height = 'auto';
-                }
-                var parent = img.parentNode;
-                while (parent.tagName !== undefined
-                && parent.tagName.toLowerCase() !== "body"
-                && parent.tagName.toLowerCase() !== "p") {
-                    if (!parent.style.height || parent.style.height === "") {
-                        parent.style.height = '100%';
-                    }
-                    parent = parent.parentNode;
-                }
-            }
-
-            resolvedElems.each(function (index, element) {
+            $('img,svg', contentDocumentDom).each(function (index, element) {
                 $(element).attr('draggable', 'false');
             });
         }

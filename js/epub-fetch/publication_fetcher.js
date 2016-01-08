@@ -387,11 +387,6 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
         // Currently needed for deobfuscating fonts and LCP
         this.setPackageMetadata = function(packageMetadata, settingFinishedCallback) {
 
-            var errorCb = function (error) {
-                console.error(error);
-                settingFinishedCallback();
-            };
-
             self.getXmlFileDom('/META-INF/encryption.xml', function (encryptionDom) {
                 var encryptionInfos = options.misc;
                 encryptionInfos.master = options.el;
@@ -407,13 +402,16 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                     if (_encryptionHandler.isLcpEncryptionSpecified()) {
                         packageMetadata.protection = 'LCP';
                         self.getLicenseLcp(function (license) {
-                            _encryptionHandler.checkLicense(license, settingFinishedCallback, errorCb);
-                        }, errorCb);
+                            _encryptionHandler.checkLicense(license, settingFinishedCallback, onError);
+                        }, onError);
                     } else {
                         settingFinishedCallback();
                     }
                 }
-            }, errorCb);
+            }, function (error) {
+                console.error(error);
+                settingFinishedCallback();
+            });
         };
 
         this.getDecryptionFunctionForRelativePath = function(pathRelativeToRoot) {

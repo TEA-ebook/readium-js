@@ -13,7 +13,7 @@
 
 define(['jquery', 'URIjs', './discover_content_type', 'zip-ext', 'readium_shared_js/helpers'], function ($, URI, ContentTypeDiscovery, zip, Helpers) {
 
-    var ZipResourceFetcher = function (parentFetcher, baseUrl, libDir) {
+    var ZipResourceFetcher = function (parentFetcher, libDir) {
 
         var ebookURL = parentFetcher.getEbookURL();
         var ebookURL_filepath = parentFetcher.getEbookURL_FilePath();
@@ -49,15 +49,15 @@ define(['jquery', 'URIjs', './discover_content_type', 'zip-ext', 'readium_shared
 
                 _zipFs = new zip.fs.FS();
 
-                if(baseUrl instanceof Blob || ebookURL instanceof File) {
+                if(ebookURL instanceof Blob || ebookURL instanceof File) {
                     // baseUrl is the epub File (same as Blob)
-                    _zipFs.importBlob(baseUrl, function () {
+                    _zipFs.importBlob(ebookURL, function () {
                         callback(_zipFs, onerror);
                     }, onerror);
                 }
                 else {
-                    // baseUrl is the path to the epub
-                    _zipFs.importHttpContent(baseUrl, true, function () {
+                    // ebookURL is the path to the epub
+                    _zipFs.importHttpContent(ebookURL, true, function () {
                         callback(_zipFs, onerror);
                     }, onerror);
                 }

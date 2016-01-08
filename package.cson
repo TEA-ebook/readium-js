@@ -284,12 +284,9 @@ scripts:
             build-output/
         &&
         npm run cpy
-            build-output/_multiple-bundles/deflate.js
+            build-output/_multiple-bundles/*flate.js
             build-output/
-        &&
-        npm run cpy
-            build-output/_multiple-bundles/inflate.js
-            build-output/
+
         &&
         npm run rimraf
             build-output/_multiple-bundles/deflate.js

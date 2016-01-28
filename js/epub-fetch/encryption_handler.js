@@ -11,12 +11,14 @@
 //  used to endorse or promote products derived from this software without specific 
 //  prior written permission.
 
-define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (require, module, LcpHandler, SHA1) {
+define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (require, module, LcpHandler, CryptoJS_SHA1) {
 
     var EncryptionHandler = function (encryptionData, onError) {
         var self = this;
 
-        var lcpHandler = encryptionData.infos ? new LcpHandler(encryptionData.infos, onError) : false;
+        var LCP_RETRIEVAL_KEY = 'license.lcpl#/encryption/content_key';
+
+        var lcpHandler = encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData.infos, onError) : false;
 
         var ENCRYPTION_METHODS = {
             'http://www.idpf.org/2008/embedding': embeddedFontDeobfuscateIdpf,
@@ -24,7 +26,6 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             'http://www.w3.org/2001/04/xmlenc#aes256-cbc': lcpHandler ? lcpHandler.decryptContent : undefined
         };
 
-        var LCP_RETRIEVAL_KEY = 'license.lcpl#/encryption/content_key';
 
         // INTERNAL FUNCTIONS
 
@@ -54,7 +55,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         }
 
         function embeddedFontDeobfuscateIdpf(obfuscatedResourceBlob, callback) {
-            
+
             var prefixLength = 1040;
             // Shamelessly copied from
             // https://github.com/readium/readium-chrome-extension/blob/26d4b0cafd254cfa93bf7f6225887b83052642e0/scripts/models/path_resolver.js#L102 :
@@ -79,7 +80,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         }
 
         function embeddedFontDeobfuscateAdobe(obfuscatedResourceBlob, callback) {
-            
+
             // extract the UUID and convert to big-endian binary form (16 bytes):
             var uidWordArray = urnUuidToByteArray(encryptionData.uid);
             var prefixLength = 1024;
@@ -87,6 +88,14 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             xorObfuscatedBlob(obfuscatedResourceBlob, prefixLength, uidWordArray, callback)
         }
 
+        function isLcpEncryptionSpecified() {
+            if (self.isLcpEncryption === undefined) {
+                self.isLcpEncryption = encryptionData && encryptionData.retrievalKeys && Object.keys(encryptionData.retrievalKeys).every(function (uri) {
+                    return encryptionData.retrievalKeys[uri] === LCP_RETRIEVAL_KEY;
+                });
+            }
+            return self.isLcpEncryption;
+        }
 
         // PUBLIC API
 
@@ -94,14 +103,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             return encryptionData && encryptionData.encryptions;
         };
 
-        this.isLcpEncryptionSpecified = function () {
-            if(this.isLcpEncryption === undefined) {
-                this.isLcpEncryption = encryptionData && encryptionData.retrievalKeys && Object.keys(encryptionData.retrievalKeys).every(function (uri) {
-                    return encryptionData.retrievalKeys[uri] === LCP_RETRIEVAL_KEY;
-                });
-            }
-            return this.isLcpEncryption;
-        };
+        this.isLcpEncryptionSpecified = isLcpEncryptionSpecified;
 
         this.getEncryptionMethodForRelativePath = function (pathRelativeToRoot) {
             if (self.isEncryptionSpecified()) {
@@ -112,11 +114,11 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         };
 
         this.getDecryptionFunctionForRelativePath = function (pathRelativeToRoot) {
-        
+
             var encryptionMethod = self.getEncryptionMethodForRelativePath(pathRelativeToRoot);
-            
+
             //console.debug(pathRelativeToRoot + " -- " + encryptionMethod + " ... " + typeof ENCRYPTION_METHODS[encryptionMethod]);
-            
+
             if (encryptionMethod && ENCRYPTION_METHODS[encryptionMethod]) {
                 return ENCRYPTION_METHODS[encryptionMethod];
             } else {
@@ -136,12 +138,18 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
     EncryptionHandler.CreateEncryptionData = function (id, encryptionDom, encryptionInfos) {
 
         var txt = unescape(encodeURIComponent(id.trim()));
-        var sha = SHA1(txt);
+        var sha = CryptoJS_SHA1(txt);
+
+        var byteArray = [];
+
+        for (var i = 0; i < sha.sigBytes; i++) {
+            byteArray.push((sha.words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff);
+        }
 
         var encryptionData = {
             uid: id,
             infos: encryptionInfos,
-            uidHash: SHA1(unescape(encodeURIComponent(id.trim())), { asBytes: true }),
+            uidHash: byteArray,
             encryptions: undefined
         };
 
@@ -158,13 +166,13 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
             var cipherReference = $('CipherReference', encryptedData);
             cipherReference.each(function (index, CipherReference) {
-                
+
                 //var cipherReferenceURI = "/" + $(CipherReference).attr('URI');
                 var cipherReferenceURI = $(CipherReference).attr('URI');
 
-                //console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' + cipherReferenceURI + (retrievalMethod ? ' with key ' + retrievalMethod : ''));
+                //console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' + cipherReferenceURI);
 
-                if (!encryptionData.encryptions) {
+                if(!encryptionData.encryptions) {
                     encryptionData.encryptions = {};
                 }
 

@@ -105,17 +105,21 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
         };
 
         this.fetchFileContentsBlob = function(pathRelativeToPackageRoot, fetchCallback, onerror) {
-            var decryptionFunction = parentFetcher.getDecryptionFunctionForRelativePath(pathRelativeToPackageRoot);
 
+            var decryptionFunction = parentFetcher.getDecryptionFunctionForRelativePath(pathRelativeToPackageRoot);
+            if (decryptionFunction) {
+                var origFetchCallback = fetchCallback;
+                fetchCallback = function (unencryptedBlob) {
+                    decryptionFunction(unencryptedBlob, function (decryptedBlob) {
+                        origFetchCallback(decryptedBlob);
+                    });
+                };
+            }
             fetchFileContents(pathRelativeToPackageRoot, function (contentsArrayBuffer) {
-                var type = ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot);
-                if (decryptionFunction) {
-                    decryptionFunction(contentsArrayBuffer, fetchCallback, 'blob', type);
-                } else {
-                    fetchCallback(new Blob([contentsArrayBuffer], {
-                        'type': type
-                    }));
-                }
+                var blob = new Blob([contentsArrayBuffer], {
+                    type: ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot)
+                });
+                fetchCallback(blob);
             }, onerror);
         };
     };

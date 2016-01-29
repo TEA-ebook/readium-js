@@ -233,18 +233,18 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                     _packageDomInitializationDeferred = $.Deferred();
                     _packageDomInitializationDeferred.done(callback);
                     self.getPackageFullPath(function (packageFullPath) {
-                                
+
                         _packageFullPath = packageFullPath;
                         _packageDocumentAbsoluteUrl = _resourceFetcher.resolveURI(_packageFullPath);
-                        
+
                         console.debug("PACKAGE: ");
                         console.log(_packageFullPath);
                         console.log(_packageDocumentAbsoluteUrl);
-                        
+
                         if (packageFullPath && packageFullPath.charAt(0) != '/') {
                             packageFullPath = '/' + packageFullPath;
                         }
-                        
+
                         self.getXmlFileDom(packageFullPath, function (packageDom) {
                             _packageDom = packageDom;
                             _packageDomInitializationDeferred.resolve(packageDom);
@@ -278,26 +278,26 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
             }
 
             var onerror = function() {
-                
+
                 var err = arguments ?
                     (
                         (arguments.length && (arguments[0] instanceof Error)) ?
-                        arguments[0]
-                        : ((arguments instanceof Error) ? arguments : undefined)
+                            arguments[0]
+                            : ((arguments instanceof Error) ? arguments : undefined)
                     )
                     : undefined;
-                
+
                 // hacky! :(
                 // (we need to filter these out from the console output, as they are in fact false positives)
                 var optionalFetch = (pathRelativeToEpubRoot.indexOf("META-INF/com.apple.ibooks.display-options.xml") == 0)
-                || (pathRelativeToEpubRoot.indexOf("META-INF/encryption.xml") == 0);
-                    
+                    || (pathRelativeToEpubRoot.indexOf("META-INF/encryption.xml") == 0);
+
                 console.log("MISSING: " + pathRelativeToEpubRoot);
-                    
+
                 if (!optionalFetch) {
                     if (err) {
                         console.error(err);
-                        
+
                         if (err.message) {
                             console.debug(err.message);
                         }
@@ -306,66 +306,59 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                         }
                     }
                 }
-                
+
                 if (errorCallback) errorCallback.apply(this, arguments);
             };
 
             // ZIP resource fetcher does not support absolute URLs outside of the EPUB archive
             // (e.g. MathJax.js and annotations.css)
             if (//!isExploded()
-                _shouldConstructDomProgrammatically // includes isExploded() and obfuscated fonts
-                &&
-                new URI(relativeToPackagePath).scheme() !== '') {
+            _shouldConstructDomProgrammatically // includes isExploded() and obfuscated fonts
+            &&
+            new URI(relativeToPackagePath).scheme() !== '') {
 
                 console.log("shouldConstructDomProgrammatically EXTERNAL RESOURCE ...");
 
-                  if (fetchMode === 'blob') {
+                if (fetchMode === 'blob') {
 
-                      var xhr = new XMLHttpRequest();
-                      xhr.open('GET', relativeToPackagePath, true);
-                      xhr.responseType = 'arraybuffer';
-                      xhr.onerror = onerror;
+                    var xhr = new XMLHttpRequest();
+                    xhr.open('GET', relativeToPackagePath, true);
+                    xhr.responseType = 'arraybuffer';
+                    xhr.onerror = onerror;
 
-                      xhr.onload = function (loadEvent) {
+                    xhr.onload = function (loadEvent) {
                         var blob = new Blob([xhr.response], {
                             type: ContentTypeDiscovery.identifyContentTypeFromFileName(relativeToPackagePath)
                         });
                         fetchCallback(blob);
-                      };
+                    };
 
-                      xhr.send();
+                    xhr.send();
 
-                  } else if (fetchMode === 'data64uri') {
-                      console.error("data64uri??");
-                  } else {
+                } else if (fetchMode === 'data64uri') {
+                    console.error("data64uri??");
+                } else {
 
-                      $.ajax({
-                          // encoding: "UTF-8",
-                          // mimeType: "text/plain; charset=UTF-8",
-                          // beforeSend: function( xhr ) {
-                          //     xhr.overrideMimeType("text/plain; charset=UTF-8");
-                          // },
-                          isLocal: false,
-                          url: relativeToPackagePath,
-                          dataType: 'text', //https://api.jquery.com/jQuery.ajax/
-                          async: true,
-                          success: function (result) {
-                              fetchCallback(result);
-                          },
-                          error: function (xhr, status, errorThrown) {
-                              onerror(new Error(errorThrown));
-                          }
+                    $.ajax({
+                        // encoding: "UTF-8",
+                        // mimeType: "text/plain; charset=UTF-8",
+                        // beforeSend: function( xhr ) {
+                        //     xhr.overrideMimeType("text/plain; charset=UTF-8");
+                        // },
+                        isLocal: false,
+                        url: relativeToPackagePath,
+                        dataType: 'text', //https://api.jquery.com/jQuery.ajax/
+                        async: true,
+                        success: function (result) {
+                            fetchCallback(result);
+                        },
+                        error: function (xhr, status, errorThrown) {
+                            onerror(new Error(errorThrown));
+                        }
                     });
                 }
 
                 return;
-            }
-
-            var pathRelativeToEpubRoot = decodeURIComponent(self.convertPathRelativeToPackageToRelativeToBase(relativeToPackagePath));
-
-            // In case we received an absolute path, convert it to relative form or the fetch will fail:
-            if (pathRelativeToEpubRoot.charAt(0) === '/') {
-                pathRelativeToEpubRoot = pathRelativeToEpubRoot.substr(1);
             }
 
             var fetchFunction = _resourceFetcher.fetchFileContentsText;
@@ -375,6 +368,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                 console.error("data64uri??");
                 fetchFunction = _resourceFetcher.fetchFileContentsData64Uri;
             }
+
             fetchFunction.call(_resourceFetcher, pathRelativeToEpubRoot, fetchCallback, onerror);
         };
 
@@ -384,19 +378,53 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
             self.getXmlFileDom(self.convertPathRelativeToPackageToRelativeToBase(filePath), callback, errorCallback);
         };
 
-        // Currently needed for deobfuscating fonts and LCP
+        // TODO: this function seems unused, and the callback parameter seems to be onError
+        function readEncriptionData(callback) {
+            self.getXmlFileDom('/META-INF/encryption.xml', function (encryptionDom, error) {
+
+                if(error) {
+
+                    _encryptionHandler = new EncryptionHandler(undefined);
+                    callback();
+                }
+                else {
+
+                    var encryptions = [];
+
+
+                    var encryptedData = $('EncryptedData', encryptionDom);
+                    encryptedData.each(function (index, encryptedData) {
+                        var encryptionAlgorithm = $('EncryptionMethod', encryptedData).first().attr('Algorithm');
+
+                        encryptions.push({algorithm: encryptionAlgorithm});
+
+                        // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
+                        var cipherReference = $('CipherReference', encryptedData);
+                        cipherReference.each(function (index, CipherReference) {
+                            var cipherReferenceURI = $(CipherReference).attr('URI');
+                            console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
+                                cipherReferenceURI);
+                            encryptions[cipherReferenceURI] = encryptionAlgorithm;
+                        });
+                    });
+                }
+
+            });
+        }
+
+        // Currently needed for deobfuscating fonts
         this.setPackageMetadata = function(packageMetadata, settingFinishedCallback) {
 
             self.getXmlFileDom('/META-INF/encryption.xml', function (encryptionDom) {
                 var encryptionInfos = options.misc;
-                encryptionInfos.master = options.el;
-
                 var encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom, encryptionInfos);
 
                 _encryptionHandler = new EncryptionHandler(encryptionData, onError);
+
                 if (_encryptionHandler.isEncryptionSpecified()) {
                     // EPUBs that use encryption for any resources should be fetched in a programmatical manner:
                     _shouldConstructDomProgrammatically = true;
+                    console.log("_shouldConstructDomProgrammatically ENCRYPTION ACTIVE: " + _shouldConstructDomProgrammatically);
 
                     // get LCP license
                     if (_encryptionHandler.isLcpEncryptionSpecified()) {
@@ -407,8 +435,11 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                     } else {
                         settingFinishedCallback();
                     }
+                } else {
+                    settingFinishedCallback();
                 }
-            }, function (error) {
+
+            }, function(error){
                 console.error(error);
                 settingFinishedCallback();
             });
@@ -420,4 +451,5 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
     };
 
     return PublicationFetcher;
+
 });

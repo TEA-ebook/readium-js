@@ -99,11 +99,12 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
 
         // PUBLIC API
 
+        this.isLcpEncryptionSpecified = isLcpEncryptionSpecified;
+
         this.isEncryptionSpecified = function () {
             return encryptionData && encryptionData.encryptions;
         };
 
-        this.isLcpEncryptionSpecified = isLcpEncryptionSpecified;
 
         this.getEncryptionMethodForRelativePath = function (pathRelativeToRoot) {
             if (self.isEncryptionSpecified()) {
@@ -135,10 +136,12 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         };
     };
 
-    EncryptionHandler.CreateEncryptionData = function (id, encryptionDom, encryptionInfos) {
+    EncryptionHandler.CreateEncryptionData =  function(id, encryptionDom, encryptionInfos) {
 
         var txt = unescape(encodeURIComponent(id.trim()));
         var sha = CryptoJS_SHA1(txt);
+
+        //console.debug(sha.toString(CryptoJS.enc.Hex));
 
         var byteArray = [];
 
@@ -146,11 +149,17 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             byteArray.push((sha.words[i >>> 2] >>> (24 - (i % 4) * 8)) & 0xff);
         }
 
+        // for (var i = 0; i < sha.words.length; ++i) {
+        //     for (var j = 3; j >= 0; --j) {
+        //         byteArray.push((sha.words[i] >> 8 * j) & 0xFF);
+        //     }
+        // }
+
         var encryptionData = {
             uid: id,
-            infos: encryptionInfos,
             uidHash: byteArray,
-            encryptions: undefined
+            encryptions: undefined,
+            infos: encryptionInfos
         };
 
         var encryptedData = $('EncryptedData', encryptionDom);
@@ -170,7 +179,8 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
                 //var cipherReferenceURI = "/" + $(CipherReference).attr('URI');
                 var cipherReferenceURI = $(CipherReference).attr('URI');
 
-                //console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' + cipherReferenceURI);
+                console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
+                    cipherReferenceURI);
 
                 if(!encryptionData.encryptions) {
                     encryptionData.encryptions = {};

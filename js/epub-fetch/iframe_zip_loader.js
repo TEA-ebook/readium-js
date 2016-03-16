@@ -300,7 +300,9 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
 
         function processImages(contentDocumentDom) {
             $('img,svg', contentDocumentDom).each(function (index, element) {
-                $(element).attr('draggable', 'false');
+                element.setAttribute('draggable', 'false');
+                element.style.maxWidth = 'unset';
+                element.style.height = 'auto';
             });
         }
 

@@ -322,7 +322,6 @@ scripts:
             build-output/_multiple-bundles/inflate.js.map
         )
         || echo "=== SUCCESS [ignore previous error]: no sourcemaps were generated for zip web-worker, deflate, inflate (no uglification)."
-        )
     '
 
 #=====================

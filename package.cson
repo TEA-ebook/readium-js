@@ -184,8 +184,16 @@ scripts:
         &&
         npm run rimraf
             build-output/*
+        &&
+        npm run rimraf
+            api-docs/*
     '
 
+#=====================
+    apidocs: '
+
+        npm run yuidocjs
+    '
 
 #=====================
     'prebuild': '
@@ -207,7 +215,7 @@ scripts:
     lint: '
 
         npm run jshint
-            js/**.js
+            "js/**.js"
     '
 
 #=====================
@@ -289,28 +297,32 @@ scripts:
 
         &&
         npm run rimraf
+            build-output/_multiple-bundles/z-worker.js
+        &&
+        npm run rimraf
             build-output/_multiple-bundles/deflate.js
         &&
         npm run rimraf
             build-output/_multiple-bundles/inflate.js
-        &&
-        npm run rimraf
-            build-output/_multiple-bundles/z-worker.js
-
 
         &&
+        (
         npm run cpy
             build-output/_multiple-bundles/*.js.map
             build-output/
+            
+        &&
+        npm run rimraf
+            build-output/_multiple-bundles/z-worker.js.map
         &&
         npm run rimraf
             build-output/_multiple-bundles/deflate.js.map
         &&
         npm run rimraf
             build-output/_multiple-bundles/inflate.js.map
-        &&
-        npm run rimraf
-            build-output/_multiple-bundles/z-worker.js.map
+        )
+        || echo "=== SUCCESS [ignore previous error]: no sourcemaps were generated for zip web-worker, deflate, inflate (no uglification)."
+        )
     '
 
 #=====================

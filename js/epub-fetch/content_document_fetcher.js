@@ -53,10 +53,13 @@ define(
                     console.log("fetchMediaAssetsProgrammatically ...");
             
                     resolveDocumentImages(resolutionDeferreds, onerror);
+                    
                     resolveDocumentAudios(resolutionDeferreds, onerror);
                     resolveDocumentVideos(resolutionDeferreds, onerror);
                     resolveDocumentInlineStyleImages(resolutionDeferreds, onerror);
 
+                    // both audio and video
+                    resolveResourceElements('source', 'src', 'blob', resolutionDeferreds, onerror);
                     resolveResourceElements('object', 'data', 'blob', resolutionDeferreds, onerror);
                 }
 

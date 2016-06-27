@@ -162,37 +162,27 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             infos: encryptionInfos
         };
 
-        var encryptedData = $('EncryptedData', encryptionDom);
+        var encryptedData = $(encryptionDom).find("enc\\:EncryptedData, EncryptedData");
         encryptedData.each(function (index, encryptedData) {
-            var encryptionAlgorithm = $('EncryptionMethod', encryptedData).first().attr('Algorithm');
+          var data = $(encryptedData);
+          var encryptionAlgorithm = data.find("enc\\:EncryptionMethod, EncryptionMethod").first().attr('Algorithm');
 
-            var retrievalMethod = false;
-            var retrievalMethods = $('RetrievalMethod', encryptedData);
-            if (retrievalMethods.length > 0) {
-                retrievalMethod = retrievalMethods.first().attr('URI');
+          // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
+          var cipherReference = data.find("enc\\:CipherReference, CipherReference");
+          cipherReference.each(function (index, CipherReference) {
+
+            //var cipherReferenceURI = "/" + $(CipherReference).attr('URI');
+            var cipherReferenceURI = $(CipherReference).attr('URI');
+
+            console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
+              cipherReferenceURI);
+
+            if(!encryptionData.encryptions) {
+              encryptionData.encryptions = {};
             }
 
-            // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
-            var cipherReference = $('CipherReference', encryptedData);
-            cipherReference.each(function (index, CipherReference) {
-
-                //var cipherReferenceURI = "/" + $(CipherReference).attr('URI');
-                var cipherReferenceURI = $(CipherReference).attr('URI');
-
-                console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
-                    cipherReferenceURI);
-
-                if(!encryptionData.encryptions) {
-                    encryptionData.encryptions = {};
-                }
-
-                if (!encryptionData.retrievalKeys) {
-                    encryptionData.retrievalKeys = {};
-                }
-
-                encryptionData.encryptions[cipherReferenceURI] = encryptionAlgorithm;
-                encryptionData.retrievalKeys[cipherReferenceURI] = retrievalMethod;
-            });
+            encryptionData.encryptions[cipherReferenceURI] = encryptionAlgorithm;
+          });
         });
 
         return encryptionData;

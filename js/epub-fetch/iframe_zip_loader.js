@@ -147,7 +147,8 @@ define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser'
             }
 
             iframe.onload = function () {
-                if (iframe.src !== iframe.contentWindow.location.href) {
+                // prevent epub own programmatic navigation
+                if (iframe.src !== "" && iframe.contentWindow !== null && iframe.src !== iframe.contentWindow.location.href) {
                   $(iframe).contents().empty();
                   self.emit(Globals.Events.SCRIPT_NAVIGATION_DETECTED, iframe.contentWindow.location.href);
                   return;

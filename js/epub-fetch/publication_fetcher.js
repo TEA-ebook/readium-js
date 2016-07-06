@@ -130,7 +130,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
          * of media assets. Typically needed for zipped EPUBs or encrypted exploded EPUBs.
          */
         this.shouldFetchMediaAssetsProgrammatically = function() {
-            return _shouldConstructDomProgrammatically;
+            return !isExploded() || _encryptionHandler.isLcpEncryptionSpecified();
         };
 
         this.getEbookURL = function() {
@@ -372,45 +372,9 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
             fetchFunction.call(_resourceFetcher, pathRelativeToEpubRoot, fetchCallback, onerror);
         };
 
-
-
         this.getRelativeXmlFileDom = function (filePath, callback, errorCallback) {
             self.getXmlFileDom(self.convertPathRelativeToPackageToRelativeToBase(filePath), callback, errorCallback);
         };
-
-        // TODO: this function seems unused, and the callback parameter seems to be onError
-        function readEncriptionData(callback) {
-            self.getXmlFileDom('/META-INF/encryption.xml', function (encryptionDom, error) {
-
-                if(error) {
-
-                    _encryptionHandler = new EncryptionHandler(undefined);
-                    callback();
-                }
-                else {
-
-                    var encryptions = [];
-
-
-                    var encryptedData = $('EncryptedData', encryptionDom);
-                    encryptedData.each(function (index, encryptedData) {
-                        var encryptionAlgorithm = $('EncryptionMethod', encryptedData).first().attr('Algorithm');
-
-                        encryptions.push({algorithm: encryptionAlgorithm});
-
-                        // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
-                        var cipherReference = $('CipherReference', encryptedData);
-                        cipherReference.each(function (index, CipherReference) {
-                            var cipherReferenceURI = $(CipherReference).attr('URI');
-                            console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
-                                cipherReferenceURI);
-                            encryptions[cipherReferenceURI] = encryptionAlgorithm;
-                        });
-                    });
-                }
-
-            });
-        }
 
         // Currently needed for deobfuscating fonts
         this.setPackageMetadata = function(packageMetadata, settingFinishedCallback) {

@@ -187,13 +187,8 @@ define(['jquery', 'URIjs', './discover_content_type', 'zip-ext', 'readium_shared
             return url + (url.charAt(url.length-1) == '/' ? "" : "/") + pathRelativeToPackageRoot;
         };
 
-        this.fetchFileContentsText = function (relativePathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
-            if (onerror === undefined) {
-                onerror = fetchCallback;
-                fetchCallback = decryptionFunction;
-                decryptionFunction = false;
-            }
-
+        this.fetchFileContentsText = function (relativePathRelativeToPackageRoot, fetchCallback, onerror) {
+            var decryptionFunction = parentFetcher.getDecryptionFunctionForRelativePath(relativePathRelativeToPackageRoot);
             if (decryptionFunction) {
                 fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
                     entry.getBlob(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot), function (blob) {
@@ -207,13 +202,8 @@ define(['jquery', 'URIjs', './discover_content_type', 'zip-ext', 'readium_shared
             }
         };
 
-        this.fetchFileContentsData64Uri = function (relativePathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
-            if (onerror === undefined) {
-                onerror = fetchCallback;
-                fetchCallback = decryptionFunction;
-                decryptionFunction = false;
-            }
-
+        this.fetchFileContentsData64Uri = function (relativePathRelativeToPackageRoot, fetchCallback, onerror) {
+            var decryptionFunction = parentFetcher.getDecryptionFunctionForRelativePath(relativePathRelativeToPackageRoot);
             if (decryptionFunction) {
                 fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
                     entry.getBlob(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot), function (blob) {
@@ -228,13 +218,8 @@ define(['jquery', 'URIjs', './discover_content_type', 'zip-ext', 'readium_shared
             }
         };
 
-        this.fetchFileContentsBlob = function (relativePathRelativeToPackageRoot, decryptionFunction, fetchCallback, onerror) {
-            if (onerror === undefined) {
-                onerror = fetchCallback;
-                fetchCallback = decryptionFunction;
-                decryptionFunction = false;
-            }
-
+        this.fetchFileContentsBlob = function (relativePathRelativeToPackageRoot, fetchCallback, onerror) {
+            var decryptionFunction = parentFetcher.getDecryptionFunctionForRelativePath(relativePathRelativeToPackageRoot);
             if (decryptionFunction) {
                 var origFetchCallback = fetchCallback;
                 fetchCallback = function (unencryptedBlob) {

@@ -12,9 +12,12 @@
 //  prior written permission.
 
 
-define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore', './discover_content_type'], function(URI, bowser, IFrameLoader, _, ContentTypeDiscovery){
+define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore', './discover_content_type'],
+  function(Globals, $, EventEmitter, URI, bowser, IFrameLoader, _, ContentTypeDiscovery) {
 
     var zipIframeLoader = function(getCurrentResourceFetcher, contentDocumentTextPreprocessor) {
+
+        $.extend(this, new EventEmitter());
 
         var isIE = (window.navigator.userAgent.indexOf("Trident") > 0 || window.navigator.userAgent.indexOf("Edge") > 0);
             
@@ -144,6 +147,12 @@ define(['URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore'
             }
 
             iframe.onload = function () {
+                if (iframe.src !== iframe.contentWindow.location.href) {
+                  $(iframe).contents().empty();
+                  self.emit(Globals.Events.SCRIPT_NAVIGATION_DETECTED, iframe.contentWindow.location.href);
+                  return;
+                }
+
                 var doc = iframe.contentDocument || iframe.contentWindow.document;
 
                 // $('iframe', doc).each(function(i, child_iframe){

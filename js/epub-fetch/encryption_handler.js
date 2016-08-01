@@ -176,6 +176,12 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
           var data = $(encryptedData);
           var encryptionAlgorithm = data.find("enc\\:EncryptionMethod, EncryptionMethod").first().attr('Algorithm');
 
+          var retrievalMethod = false;
+          var retrievalMethods = $('RetrievalMethod', encryptedData);
+          if (retrievalMethods.length > 0) {
+            retrievalMethod = retrievalMethods.first().attr('URI');
+          }
+
           // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
           var cipherReference = data.find("enc\\:CipherReference, CipherReference");
           cipherReference.each(function (index, CipherReference) {
@@ -183,14 +189,18 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             //var cipherReferenceURI = "/" + $(CipherReference).attr('URI');
             var cipherReferenceURI = $(CipherReference).attr('URI');
 
-            console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' +
-              cipherReferenceURI);
+            console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' + cipherReferenceURI);
 
-            if(!encryptionData.encryptions) {
+            if (!encryptionData.retrievalKeys) {
+              encryptionData.retrievalKeys = {};
+            }
+
+            if (!encryptionData.encryptions) {
               encryptionData.encryptions = {};
             }
 
             encryptionData.encryptions[cipherReferenceURI] = encryptionAlgorithm;
+            encryptionData.retrievalKeys[cipherReferenceURI] = retrievalMethod;
           });
         });
 

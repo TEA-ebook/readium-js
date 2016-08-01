@@ -51,7 +51,7 @@
   "devDependencies": {
     "crypto-js": "latest",
     "zipjs": "johanpoirier/zip.js#94cea112b4",
-    "bowser": "latest",
+    "bowser": "1.4.3",
     "requirejs-text": "latest",
     "gift": "latest"
   },

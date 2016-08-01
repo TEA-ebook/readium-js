@@ -111,8 +111,8 @@ define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser'
         this._loadIframeWithDocument = function (iframe, attachedData, contentDocumentData, callback) {
             var documentDataUri, blob;
 
-            // IE and Safari 6 for iOS don't handle Blobs correctly
-            var isBlobHandled = !bowser.msie && !(bowser.ios && (parseInt(bowser.version) < 7));
+            // IE, Edge and Safari 6 for iOS don't handle Blobs correctly
+            var isBlobHandled = !bowser.msie && !bowser.msedge &&!(bowser.ios && (parseInt(bowser.version) < 7));
             if (isBlobHandled) {
                 var contentType = 'text/html';
                 if (attachedData.spineItem.media_type && attachedData.spineItem.media_type.length) {

@@ -90,7 +90,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
 
         function isLcpEncryptionSpecified() {
             if (self.isLcpEncryption === undefined) {
-                self.isLcpEncryption = encryptionData && encryptionData.retrievalKeys && Object.keys(encryptionData.retrievalKeys).every(function (uri) {
+                self.isLcpEncryption = encryptionData && encryptionData.retrievalKeys && Object.keys(encryptionData.retrievalKeys).some(function (uri) {
                     return encryptionData.retrievalKeys[uri] === LCP_RETRIEVAL_KEY;
                 });
             }
@@ -104,16 +104,6 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         this.isEncryptionSpecified = function () {
             return encryptionData && encryptionData.encryptions;
         };
-
-        this.isFontEncryptionSpecified = function () {
-          if (self.isFontEncryption === undefined) {
-            self.isFontEncryption = encryptionData && encryptionData.retrievalKeys && Object.keys(encryptionData.retrievalKeys).every(function (uri) {
-                return encryptionData.retrievalKeys[uri] === LCP_RETRIEVAL_KEY;
-              });
-          }
-          return self.isLcpEncryption;
-        };
-
 
         this.getEncryptionMethodForRelativePath = function (pathRelativeToRoot) {
             if (self.isEncryptionSpecified()) {

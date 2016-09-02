@@ -37,12 +37,13 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
 
         var _contentDocumentTextPreprocessor = contentDocumentTextPreprocessor;
         var _contentType = contentType;
+        var _encryptionData;
 
         this.markupParser = new MarkupParser();
 
         this.initialize =  function(callback) {
 
-            var isEpubExploded = isExploded();
+            var isEpubExploded = this.isExploded();
 
             // Non exploded EPUBs (i.e. zipped .epub documents) should be fetched in a programmatical manner:
             _shouldConstructDomProgrammatically = !isEpubExploded;
@@ -63,37 +64,6 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
 
         // INTERNAL FUNCTIONS
 
-        function isExploded() {
-            // binary object means packed EPUB
-            if (ebookURL instanceof Blob || ebookURL instanceof File) return false;
-
-            if (_contentType &&
-                (
-                    _contentType.indexOf("application/epub+zip") >= 0
-                    ||
-                    _contentType.indexOf("application/zip") >= 0
-                    ||
-                    _contentType.indexOf("application/octet-stream") >= 0
-                )
-            ) return false;
-
-            var uriTrimmed = ebookURL;
-
-            try {
-                //.absoluteTo("http://readium.org/epub")
-                uriTrimmed = new URI(uriTrimmed).search('').hash('').toString();
-            } catch(err) {
-                console.error(err);
-                console.log(ebookURL);
-            }
-
-            // dumb test: ends with ".epub" file extension
-            return  !(/\.epub$/.test(uriTrimmed));
-
-            // var ext = ".epub";
-            // return ebookURL.indexOf(ext, ebookURL.length - ext.length) === -1;
-        }
-
         function createResourceFetcher(isExploded, callback) {
             if (isExploded) {
                 console.log(' --- using PlainResourceFetcher');
@@ -108,6 +78,41 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
 
         
         // PUBLIC API
+
+        /**
+         *
+         * @returns {boolean}
+         */
+        this.isExploded = function() {
+          // binary object means packed EPUB
+          if (ebookURL instanceof Blob || ebookURL instanceof File) return false;
+
+          if (_contentType &&
+            (
+              _contentType.indexOf("application/epub+zip") >= 0
+              ||
+              _contentType.indexOf("application/zip") >= 0
+              ||
+              _contentType.indexOf("application/octet-stream") >= 0
+            )
+          ) return false;
+
+          var uriTrimmed = ebookURL;
+
+          try {
+            //.absoluteTo("http://readium.org/epub")
+            uriTrimmed = new URI(uriTrimmed).search('').hash('').toString();
+          } catch(err) {
+            console.error(err);
+            console.log(ebookURL);
+          }
+
+          // dumb test: ends with ".epub" file extension
+          return  !(/\.epub$/.test(uriTrimmed));
+
+          // var ext = ".epub";
+          // return ebookURL.indexOf(ext, ebookURL.length - ext.length) === -1;
+        };
 
         /**
          * Determine whether the documents fetched using this fetcher require special programmatic handling.
@@ -130,7 +135,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
          * of media assets. Typically needed for zipped EPUBs or encrypted exploded EPUBs.
          */
         this.shouldFetchMediaAssetsProgrammatically = function() {
-            return !isExploded() || _encryptionHandler.isLcpEncryptionSpecified();
+            return !this.isExploded() || _encryptionHandler.isLcpEncryptionSpecified();
         };
 
         this.getEbookURL = function() {
@@ -167,7 +172,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
             _publicationResourcesCache.unPinResources();
 
 
-            var contentDocumentFetcher = new ContentDocumentFetcher(self, attachedData.spineItem, loadedDocumentUri, _publicationResourcesCache, _contentDocumentTextPreprocessor);
+            var contentDocumentFetcher = new ContentDocumentFetcher(self, attachedData.spineItem, loadedDocumentUri, _publicationResourcesCache, _contentDocumentTextPreprocessor, _encryptionData);
             contentDocumentFetcher.fetchContentDocumentAndResolveDom(contentDocumentResolvedCallback, errorCallback);
         };
 
@@ -312,8 +317,8 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
 
             // ZIP resource fetcher does not support absolute URLs outside of the EPUB archive
             // (e.g. MathJax.js and annotations.css)
-            if (//!isExploded()
-            _shouldConstructDomProgrammatically // includes isExploded() and obfuscated fonts
+            if (//!this.isExploded()
+            _shouldConstructDomProgrammatically // includes this.isExploded() and obfuscated fonts
             &&
             new URI(relativeToPackagePath).scheme() !== '') {
 
@@ -381,9 +386,9 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
 
             self.getXmlFileDom('/META-INF/encryption.xml', function (encryptionDom) {
                 var encryptionInfos = options.misc;
-                var encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom, encryptionInfos);
+                _encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom, encryptionInfos);
 
-                _encryptionHandler = new EncryptionHandler(encryptionData, onError);
+                _encryptionHandler = new EncryptionHandler(_encryptionData, onError);
 
                 if (_encryptionHandler.isEncryptionSpecified()) {
                     // EPUBs that use encryption for any resources should be fetched in a programmatical manner:

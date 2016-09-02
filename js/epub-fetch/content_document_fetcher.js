@@ -16,7 +16,7 @@ define(
     function ($, _, URI, ContentTypeDiscovery) {
 
 
-        var ContentDocumentFetcher = function (publicationFetcher, spineItem, loadedDocumentUri, publicationResourcesCache, contentDocumentTextPreprocessor) {
+        var ContentDocumentFetcher = function (publicationFetcher, spineItem, loadedDocumentUri, publicationResourcesCache, contentDocumentTextPreprocessor, encryptionData) {
 
             var self = this;
 
@@ -147,8 +147,14 @@ define(
 
                 var contentDocumentPathRelativeToBase = _publicationFetcher.convertPathRelativeToPackageToRelativeToBase(_contentDocumentPathRelativeToPackage);
 
-                var resourceUriRelativeToBase = "/" + (new URI(refAttrOrigResourceUrl)).absoluteTo(contentDocumentPathRelativeToBase).toString();
+                var resourceUriRelativeToBase = (new URI(refAttrOrigResourceUrl)).absoluteTo(contentDocumentPathRelativeToBase).toString();
 
+                // all assets are not encrypted and must not be fetched
+                if (_publicationFetcher.isExploded() && encryptionData && !encryptionData.encryptions[resourceUriRelativeToBase]) {
+                  return;
+                }
+
+                resourceUriRelativeToBase = "/" + resourceUriRelativeToBase;
 
                 var cachedResourceUrl = _publicationResourcesCache.getResourceURL(resourceUriRelativeToBase);
 
@@ -322,20 +328,16 @@ define(
                     } else {
                         processedUrlString = "url('" + processedResourceDescriptor.resourceObjectURL + "')";
                     }
-                    var origMatchedUrlStringEscaped = origMatchedUrlString.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g,
-                        "\\$&");
+                    var origMatchedUrlStringEscaped = origMatchedUrlString.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
                     var origMatchedUrlStringRegExp = new RegExp(origMatchedUrlStringEscaped, 'g');
                     //noinspection JSCheckFunctionSignatures
-                    styleSheetResourceData =
-                        styleSheetResourceData.replace(origMatchedUrlStringRegExp, processedUrlString, 'g');
+                    styleSheetResourceData = styleSheetResourceData.replace(origMatchedUrlStringRegExp, processedUrlString, 'g');
 
                 }
                 callback(styleSheetResourceData);
             }
 
-            function resolveResourceElements(elemName, refAttr, fetchMode, resolutionDeferreds, onerror,
-                                             resourceDataPreprocessing) {
-
+            function resolveResourceElements(elemName, refAttr, fetchMode, resolutionDeferreds, onerror, resourceDataPreprocessing) {
                 var resolvedElems = $(elemName + '[' + refAttr.replace(':', '\\:') + ']', _contentDocumentDom);
 
                 resolvedElems.each(function (index, resolvedElem) {

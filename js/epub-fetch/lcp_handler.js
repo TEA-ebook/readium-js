@@ -255,6 +255,10 @@ define(['forge', 'promise'], function (forge, es6Promise) {
         this.decryptContent = function (encryptedAes256cbcContent, callback, fetchMode, mimeType) {
             var dataType = getTypeOfData(encryptedAes256cbcContent), data;
 
+            if (!mimeType && dataType === 'blob') {
+              mimeType = encryptedAes256cbcContent.type;
+            }
+
             decipher(contentKey, encryptedAes256cbcContent, dataType).then(function (decryptedBinaryData) {
                 if (fetchMode === 'text') {
                     // convert UTF-8 decoded data to UTF-16 javascript string (with BOM removal)

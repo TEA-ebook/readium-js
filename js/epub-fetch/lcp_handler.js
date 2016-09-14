@@ -20,8 +20,11 @@ define(['forge', 'promise'], function (forge, es6Promise) {
     var LcpHandler = function (encryptionInfos, onError) {
 
         // private vars
+        var userKey;
+        var contentKey;
+
         try {
-            var userKey = forge.util.hexToBytes(encryptionInfos.hash), contentKey;
+            userKey = forge.util.hexToBytes(encryptionInfos.hash);
         } catch(e) {
             onError("encryption key is null or not defined");
         }
@@ -36,110 +39,69 @@ define(['forge', 'promise'], function (forge, es6Promise) {
                 decipher(userKey, atob(userKeyCheck)).then(function (userKeyCheckDecrypted) {
                     if (license.id === userKeyCheckDecrypted.data) {
                         //console.info("User key is valid");
-                        resolve();
+                        resolve(license);
                     } else {
                         reject(Error("User key is invalid"));
                     }
-                });
+                }).catch(reject);
             });
         }
 
         function checkLicenseFields(license) {
             return new Promise(function (resolve, reject) {
+                var errors = [];
+
                 // mandatory fields
-                if (!license.id) {
-                    reject(Error("License must contain id"));
-                }
-
-                if (!license.issued) {
-                    reject(Error("License must contain 'issued'"));
-                }
-
-                if (!license.provider) {
-                    reject(Error("License must contain 'provider'"));
-                }
-
-                if (!license.encryption) {
-                    reject(Error("License must contain 'encryption'"));
-                }
-
-                if (!license.encryption.profile) {
-                    reject(Error("License must contain 'encryption/profile'"));
-                }
-
-                if (!license.encryption.content_key) {
-                    reject(Error("License must contain 'encryption/content_key'"));
-                }
-
-                if (!license.encryption.content_key.algorithm) {
-                    reject(Error("License must contain 'encryption/content_key/algorithm'"));
-                }
-
-                if (!license.encryption.content_key.encrypted_value) {
-                    reject(Error("License must contain 'encryption/content_key/encrypted_value'"));
-                }
-
-                if (!license.encryption.user_key) {
-                    reject(Error("License must contain 'encryption/user_key'"));
-                }
-
-                if (!license.encryption.user_key.algorithm) {
-                    reject(Error("License must contain 'encryption/user_key/algorithm'"));
-                }
-
-                if (!license.encryption.user_key.key_check) {
-                    reject(Error("License must contain 'encryption/user_key/key_check'"));
-                }
-
-                if (!license.encryption.user_key.text_hint) {
-                    reject(Error("License must contain 'encryption/user_key/text_hint'"));
-                }
-
-                if (!license.links) {
-                    reject(Error("License must contain 'links'"));
-                }
-
-                if (!license.signature) {
-                    reject(Error("License must contain 'signature'"));
-                }
-
-                if (!license.signature.algorithm) {
-                    reject(Error("License must contain 'signature/algorithm'"));
-                }
-
-                if (!license.signature.certificate) {
-                    reject(Error("License must contain 'signature/certificate'"));
-                }
-
-                if (!license.signature.value) {
-                    reject(Error("License must contain 'signature/'value"));
-                }
+                var mandatoryFields = ['id', 'issued', 'provider', 'encryption', 'encryption/profile',
+                  'encryption/content_key', 'encryption/content_key/algorithm', 'encryption/content_key/encrypted_value',
+                  'encryption/user_key', 'encryption/user_key/algorithm', 'encryption/user_key/key_check',
+                  'encryption/user_key/text_hint', 'links', 'signature', 'signature/algorithm', 'signature/certificate',
+                  'signature/value'];
+                mandatoryFields.forEach(function (fieldPath) {
+                    var basePath = '';
+                    var licensePart = license;
+                    do {
+                        var fieldValues = fieldPath.match(/(\w+)\//) || [fieldPath, fieldPath];
+                        if (fieldValues && !licensePart[fieldValues[1]]) {
+                          errors.push("License must contain '" + basePath + fieldValues[1] + "'");
+                        }
+                        fieldPath = fieldPath.slice(fieldValues[0].length);
+                        licensePart = licensePart[fieldValues[1]];
+                        basePath += fieldValues[0];
+                    } while (fieldPath);
+                });
 
                 // encryption profile
                 if (license.encryption.profile !== READIUM_LCP_PROFILE_1_0) {
-                    reject(Error("Unknown encryption profile '" + license.encryption.profile + "'"));
+                    errors.push("Unknown encryption profile '" + license.encryption.profile + "'");
                 }
 
                 // rights dates
                 if (license.rights.start) {
                     var rightsStart = new Date(license.rights.start);
                     if (rightsStart.getTime() < Date.now()) {
-                        reject(Error("License rights begins after now"));
+                      errors.push("License rights begins after now");
                     }
                 }
 
                 if (license.rights.end) {
                     var rightsEnd = new Date(license.rights.end);
                     if (rightsEnd.getTime() > Date.now()) {
-                        reject(Error("License rights ends before now"));
+                        errors.push("License rights ends before now");
                     }
                 }
 
-                resolve();
+                if (errors.length > 0) {
+                  reject(Error(errors.join(', ')));
+                  return;
+                }
+
+                resolve(license);
             });
         }
 
-        function checkLicenseCertificate(license, certificate) {
+        function checkLicenseCertificate(license) {
+            var certificate = forge.pki.certificateFromAsn1(forge.asn1.fromDer(atob(license.signature.certificate)));
             return new Promise(function (resolve, reject) {
                 var notBefore = new Date(certificate.validity.notBefore),
                     notAfter = new Date(certificate.validity.notAfter),
@@ -147,9 +109,11 @@ define(['forge', 'promise'], function (forge, es6Promise) {
 
                 if (licenseUpdated.getTime() < notBefore.getTime()) {
                     reject('License issued/updated before the certificate became valid');
+                    return;
                 }
                 if (licenseUpdated.getTime() > notAfter.getTime()) {
                     reject('License issued/updated after the certificate became valid');
+                    return;
                 }
 
                 var licenseNoSignature = JSON.parse(JSON.stringify(license));
@@ -159,11 +123,10 @@ define(['forge', 'promise'], function (forge, es6Promise) {
 
                 if (!certificate.publicKey.verify(md.digest().bytes(), atob(license.signature.value))) {
                     reject('Invalid Signature');
+                    return;
                 }
 
-                //console.info("Signature is valid");
-
-                resolve();
+                resolve(license);
             });
         }
 
@@ -189,14 +152,18 @@ define(['forge', 'promise'], function (forge, es6Promise) {
         }
 
         function aesDecipher(key, encryptedData) {
-            return new Promise(function (resolve) {
-                var aesCipher = forge.cipher.createDecipher('AES-CBC', key);
+            return new Promise(function (resolve, reject) {
+                try {
+                  var aesCipher = forge.cipher.createDecipher('AES-CBC', key);
 
-                aesCipher.start({ iv: encryptedData.substring(0, 16) });
-                aesCipher.update(forge.util.createBuffer(encryptedData.substring(16)));
-                aesCipher.finish();
+                  aesCipher.start({ iv: encryptedData.substring(0, 16) });
+                  aesCipher.update(forge.util.createBuffer(encryptedData.substring(16)));
+                  aesCipher.finish();
 
-                resolve(aesCipher.output);
+                  resolve(aesCipher.output);
+                } catch(e) {
+                  reject("Key is invalid: " + e.message);
+                }
             });
         }
 
@@ -274,17 +241,15 @@ define(['forge', 'promise'], function (forge, es6Promise) {
         // PUBLIC API
 
         this.checkLicense = function (license, callback, error) {
-            checkUserKey(license).then(function () {
-                return checkLicenseFields(license);
-            }).then(function () {
-                return checkLicenseCertificate(license, forge.pki.certificateFromAsn1(forge.asn1.fromDer(atob(license.signature.certificate))));
-            }).then(function () {
-                //console.info("License is valid");
-                return new getContentKey(license);
-            }).then(function (bookContentKey) {
-                contentKey = bookContentKey;
-                callback();
-            }).catch(error);
+            checkUserKey(license)
+              .then(checkLicenseFields)
+              .then(checkLicenseCertificate)
+              .then(getContentKey)
+              .then(function (bookContentKey) {
+                  contentKey = bookContentKey;
+                  callback();
+              })
+              .catch(error);
         };
 
         this.decryptContent = function (encryptedAes256cbcContent, callback, fetchMode, mimeType) {

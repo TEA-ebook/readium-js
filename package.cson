@@ -274,6 +274,9 @@ scripts:
         &&
         npm run
             build:scripts:single
+        &&
+        npm run
+            build:serviceWorker
     '
 
 #=====================
@@ -367,6 +370,13 @@ scripts:
         npm run cpy
             readium-shared-js/static/sdk.css
             build-output/css/
+    '
+
+#=====================
+    'build:serviceWorker': '
+        cat lib/jszip.min.js > build-output/service_worker.js
+        &&
+        cat js/epub-fetch/service_worker.js >> build-output/service_worker.js
     '
 
 #=====================

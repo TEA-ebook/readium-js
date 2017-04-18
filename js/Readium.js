@@ -95,6 +95,8 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
       ReadiumSDK.reader = this.reader;
 
       var openPackageDocument_ = function (ebookURL, callback, openPageRequest, contentType) {
+        navigator.serviceWorker.controller.postMessage(ebookURL);
+
         if (_currentPublicationFetcher) {
           _currentPublicationFetcher.flushCache();
         }

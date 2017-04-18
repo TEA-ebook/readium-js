@@ -20,6 +20,12 @@ var mimeTypeMap = {
   xhtml: 'application/xhtml+xml'
 };
 
+self.addEventListener('message', function (event) {
+  var data = event.data;
+  console.log("Message from the Page : ", data);
+  self.epub = event.data;
+});
+
 self.addEventListener('install', function() {
   self.skipWaiting();
 });
@@ -72,9 +78,16 @@ function getZipResponse(mimeType, arrayBuffer) {
   return new Response(new Blob([arrayBuffer], { type: mimeType }), init);
 }
 
+function getEpubBlob(epubUrl) {
+  if (self.epub instanceof Blob) {
+    return Promise.resolve(self.epub);
+  }
+  return fetch(epubUrl).then(function (response) { return response.blob(); });
+}
+
 function getFileInEpub(epubUrl, filePath) {
-  return fetch(epubUrl)
-    .then(function (response) { return JSZip.loadAsync(response.blob()); })
+  return getEpubBlob(epubUrl)
+    .then(function (blob) { return JSZip.loadAsync(blob); })
     .then(function (zip) {
       var zipFile = zip.file(filePath);
       if (!zipFile) {

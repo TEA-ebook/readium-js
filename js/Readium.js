@@ -146,15 +146,6 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
         });
       };
 
-      var _insertServiceWorker = function (elementId) {
-        var swScript = document.createElement('script');
-        swScript.type = 'text/javascript';
-        swScript.innerText = "navigator.serviceWorker.register('./readium_service_worker.js')";
-        document.querySelector(elementId).appendChild(swScript);
-      };
-
-      _insertServiceWorker(readerOptions.el);
-
       this.openPackageDocument = function (ebookURL, callback, openPageRequest) {
 
         if (!(ebookURL instanceof Blob)

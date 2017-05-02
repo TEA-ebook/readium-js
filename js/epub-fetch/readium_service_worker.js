@@ -25,13 +25,10 @@ self.addEventListener('message', function (event) {
 });
 
 self.addEventListener('install', function(event) {
-  delete self.epub;
   event.waitUntil(self.skipWaiting());
 });
 
 self.addEventListener('activate', function(event) {
-  delete self.epub;
-
   function onActivate(version) {
     return caches.keys()
       .then(function(cacheKeys) {

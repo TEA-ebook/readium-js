@@ -95,7 +95,11 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
       ReadiumSDK.reader = this.reader;
 
       var openPackageDocument_ = function (ebookURL, callback, openPageRequest, contentType) {
-        navigator.serviceWorker.controller.postMessage(ebookURL);
+        if(ebookURL instanceof Blob && navigator.serviceWorker.controller) {
+          navigator.serviceWorker.controller.postMessage(ebookURL);
+        } else {
+          console.warn('no service worker controller available, smil audio will fail.');
+        }
 
         if (_currentPublicationFetcher) {
           _currentPublicationFetcher.flushCache();
@@ -145,7 +149,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
       var _insertServiceWorker = function (elementId) {
         var swScript = document.createElement('script');
         swScript.type = 'text/javascript';
-        swScript.innerText = "navigator.serviceWorker.register('./service_worker.js')";
+        swScript.innerText = "navigator.serviceWorker.register('./readium_service_worker.js')";
         document.querySelector(elementId).appendChild(swScript);
       };
 

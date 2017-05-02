@@ -76,7 +76,7 @@
     "build:scripts:single": "node ./readium-shared-js/readium-cfi-js/node_modules/requirejs/bin/r.js -o ./readium-shared-js/readium-cfi-js/readium-build-tools/RequireJS_config.js --rjs_bundle=single",
     "prebuild:styles": "node ./readium-shared-js/readium-cfi-js/node_modules/mkdirp/bin/cmd.js build-output/css/",
     "build:styles": "node ./readium-shared-js/readium-cfi-js/node_modules/cpy/cli.js readium-shared-js/static/sdk.css build-output/css/",
-    "build:serviceWorker": "cat lib/jszip.min.js > build-output/service_worker.js && cat js/epub-fetch/service_worker.js >> build-output/service_worker.js",
+    "build:serviceWorker": "cat lib/jszip.min.js > build-output/readium_service_worker.js && cat js/epub-fetch/readium_service_worker.js >> build-output/readium_service_worker.js",
     "http:watch": "echo > open_webbrowser.js && parallelshell \"npm run dowatch\" \"npm run httpServe\"",
     "http": "npm run genPluginsConfig && npm run httpServe",
     "dowatch": "node ./readium-shared-js/readium-cfi-js/node_modules/watch/cli.js \"npm run build && node readium-shared-js/readium-cfi-js/readium-build-tools/webbrowser.js && node ./readium-shared-js/readium-cfi-js/node_modules/rimraf/bin.js open_webbrowser.js\" dev/ js/ readium-shared-js/js/ readium-shared-js/plugins/ readium-shared-js/readium-cfi-js/js/",

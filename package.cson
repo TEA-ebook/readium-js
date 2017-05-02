@@ -374,9 +374,9 @@ scripts:
 
 #=====================
     'build:serviceWorker': '
-        cat lib/jszip.min.js > build-output/service_worker.js
+        cat lib/jszip.min.js > build-output/readium_service_worker.js
         &&
-        cat js/epub-fetch/service_worker.js >> build-output/service_worker.js
+        cat js/epub-fetch/readium_service_worker.js >> build-output/readium_service_worker.js
     '
 
 #=====================

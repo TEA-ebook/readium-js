@@ -1,5 +1,5 @@
 var config = {
-  version: 'ninja-2',
+  version: 'ninja-7',
   epubPattern: /\w\.epub\/(.*)$/
 };
 
@@ -21,17 +21,29 @@ var mimeTypeMap = {
 };
 
 self.addEventListener('message', function (event) {
-  var data = event.data;
-  console.log("Message from the Page : ", data);
   self.epub = event.data;
 });
 
-self.addEventListener('install', function() {
-  self.skipWaiting();
+self.addEventListener('install', function(event) {
+  delete self.epub;
+  event.waitUntil(self.skipWaiting());
 });
 
-self.addEventListener('activate', function() {
-  return self.clients.claim();
+self.addEventListener('activate', function(event) {
+  delete self.epub;
+
+  function onActivate(version) {
+    return caches.keys()
+      .then(function(cacheKeys) {
+        const oldCacheKeys = cacheKeys.filter(function(key) { return key.indexOf(version) !== 0; });
+        const deletePromises = oldCacheKeys.map(function(oldKey) { return caches.delete(oldKey); });
+        return Promise.all(deletePromises);
+      });
+  }
+
+  event.waitUntil(onActivate(config.version).then(function() {
+    return self.clients.claim();
+  }));
 });
 
 self.addEventListener('fetch', function (event) {
@@ -55,7 +67,12 @@ self.addEventListener('fetch', function (event) {
     if (epubFileMatch && epubFileMatch.length > 2) {
       var epubUrl = epubFileMatch[1];
       var filePath = epubFileMatch[2];
-      event.respondWith(getFileInEpub(epubUrl, filePath));
+      event.respondWith(
+        fetchFromCache(request)
+          .catch(function() { return getFileInEpub(epubUrl, filePath); })
+          .then(function(response) { return addToCache(config.version, request, response); })
+          .catch(notFoundResponse())
+      );
     }
   }
 
@@ -64,6 +81,29 @@ self.addEventListener('fetch', function (event) {
   }
 });
 
+function addToCache(cacheKey, request, response) {
+  if (response.ok) {
+    const copy = response.clone();
+    caches.open(cacheKey).then(function(cache) {
+      cache.put(request, copy);
+    });
+  }
+  return response;
+}
+
+function fetchFromCache(request) {
+  return caches.match(request).then(function(response) {
+    if (!response) {
+      return Promise.reject();
+    }
+    return response;
+  });
+}
+
+function notFoundResponse(error) {
+  return new Response(error, { status: 404 });
+}
+
 function getZipResponse(mimeType, arrayBuffer) {
   var init = {
     status: 200,
@@ -71,7 +111,7 @@ function getZipResponse(mimeType, arrayBuffer) {
     headers: {
       'Accept-Ranges': 'bytes',
       'Cache-Control': 'public',
-      'Content-Type': 'audio/mpeg',
+      'Content-Type': mimeType,
       'Content-Length': arrayBuffer.byteLength
     }
   };
@@ -82,16 +122,20 @@ function getEpubBlob(epubUrl) {
   if (self.epub instanceof Blob) {
     return Promise.resolve(self.epub);
   }
-  return fetch(epubUrl).then(function (response) { return response.blob(); });
+  return fetch(epubUrl).then(function (response) {
+    return response.blob();
+  });
 }
 
 function getFileInEpub(epubUrl, filePath) {
   return getEpubBlob(epubUrl)
-    .then(function (blob) { return JSZip.loadAsync(blob); })
+    .then(function (blob) {
+      return JSZip.loadAsync(blob);
+    })
     .then(function (zip) {
       var zipFile = zip.file(filePath);
       if (!zipFile) {
-        throw new Exception(`${filePath} not found in zip file`);
+        throw new Error(filePath + ' not found in zip file');
       }
       return zipFile.async('arraybuffer');
     })

@@ -1,5 +1,5 @@
 var config = {
-  version: 'ninja-7',
+  version: 'ninja-8',
   epubPattern: /\w\.epub\/(.*)$/
 };
 
@@ -21,7 +21,11 @@ var mimeTypeMap = {
 };
 
 self.addEventListener('message', function (event) {
-  self.epub = event.data;
+  self.epubData = event.data;
+  self.epubZip = null;
+  JSZip.loadAsync(event.data).then(function(zip) {
+    self.epubZip = zip;
+  });
 });
 
 self.addEventListener('install', function(event) {
@@ -49,8 +53,7 @@ self.addEventListener('fetch', function (event) {
     var url = new URL(request.url);
     var criteria = {
       matchesPathPattern: opts.epubPattern.test(url.pathname),
-      isGETRequest: request.method === 'GET',
-      isFromMyOrigin: url.origin === self.location.origin
+      isGETRequest: request.method === 'GET'
     };
     var failingCriteria = Object.keys(criteria).filter(function (criteriaKey) {
       return !criteria[criteriaKey];
@@ -79,7 +82,7 @@ self.addEventListener('fetch', function (event) {
 });
 
 function addToCache(cacheKey, request, response) {
-  if (response.ok) {
+  if (request.url.indexOf('file://') === -1 && response.ok) {
     const copy = response.clone();
     caches.open(cacheKey).then(function(cache) {
       cache.put(request, copy);
@@ -116,19 +119,27 @@ function getZipResponse(mimeType, arrayBuffer) {
 }
 
 function getEpubBlob(epubUrl) {
-  if (self.epub instanceof Blob) {
-    return Promise.resolve(self.epub);
+  if (self.epubData instanceof Blob) {
+    return Promise.resolve(self.epubData);
   }
   return fetch(epubUrl).then(function (response) {
     return response.blob();
   });
 }
 
+function getEpubZip(blob) {
+  if (self.epubZip) {
+    return Promise.resolve(self.epubZip);
+  }
+  return JSZip.loadAsync(blob).then(function(zip) {
+    self.epubZip = zip;
+    return zip;
+  });
+}
+
 function getFileInEpub(epubUrl, filePath) {
   return getEpubBlob(epubUrl)
-    .then(function (blob) {
-      return JSZip.loadAsync(blob);
-    })
+    .then(getEpubZip)
     .then(function (zip) {
       var zipFile = zip.file(filePath);
       if (!zipFile) {

@@ -109,7 +109,7 @@ devDependencies:
 #    "zipjs": 'gildas-lormeau/zip.js'
 #    "zipjs": 'ryanackley/zip.js'
 #    "zipjs": "danielweck/zip.js"
-    "zipjs": "johanpoirier/zip.js#94cea112b4"
+    "zipjs": "johanpoirier/zip.js#95328dda5d"
 
     "bowser": '1.4.3'
 

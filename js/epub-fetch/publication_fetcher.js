@@ -64,6 +64,37 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
 
         // INTERNAL FUNCTIONS
 
+        function isExploded() {
+            // binary object means packed EPUB
+            if (ebookURL instanceof Blob || ebookURL instanceof File) return false;
+
+            if (_contentType &&
+                (
+                    _contentType.indexOf("application/epub+zip") >= 0
+                    ||
+                    _contentType.indexOf("application/zip") >= 0
+                    ||
+                    _contentType.indexOf("application/octet-stream") >= 0
+                )
+               ) return false;
+            
+            var uriTrimmed = ebookURL;
+            
+            try {
+                //.absoluteTo("http://readium.org/epub")
+                uriTrimmed = new URI(uriTrimmed).search('').hash('').toString();
+            } catch(err) {
+                console.error(err);
+                console.log(ebookURL);
+            }
+            
+            // dumb test: ends with ".epub" file extension
+            return  !(/\.epub[3?]$/.test(uriTrimmed));
+            
+            // var ext = ".epub";
+            // return ebookURL.indexOf(ext, ebookURL.length - ext.length) === -1;
+        }
+
         function createResourceFetcher(isExploded, callback) {
             if (isExploded) {
                 console.log(' --- using PlainResourceFetcher');

@@ -226,8 +226,8 @@ define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser'
                         );
                     }
                 }
-                
-                $('svg', doc).on('load', function() {
+
+                $('svg', doc).on("load", function(){
                     console.log('SVG loaded');
                 });
                 

@@ -333,7 +333,6 @@ define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser'
             $('img,svg', contentDocumentDom).each(function (index, element) {
                 element.setAttribute('draggable', 'false');
                 element.style.maxWidth = 'unset';
-                element.style.height = 'auto';
             });
         }
 

@@ -15,8 +15,8 @@
 define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore', 'readium_shared_js/views/reader_view', 'readium_js/epub-fetch/publication_fetcher',
     'readium_js/epub-model/package_document_parser', 'readium_js/epub-fetch/iframe_zip_loader', 'readium_shared_js/views/iframe_loader'
   ],
-
-  function (Globals, versionText, $, _, ReaderView, PublicationFetcher, PackageParser, IframeZipLoader, IframeLoader) {
+  function (Globals, versionText, $, _, ReaderView, PublicationFetcher,
+            PackageParser, IframeZipLoader, IframeLoader) {
 
     var DEBUG_VERSION_GIT = false;
 
@@ -36,6 +36,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
         }
 
         function injectedScript() {
+
           navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
         }
 
@@ -76,12 +77,10 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
 
       var jsLibRoot = readiumOptions.jsLibRoot;
 
-      if (!readiumOptions.useSimpleLoader) {
-        readerOptions.iframeLoader = new IframeZipLoader(function () {
-          return _currentPublicationFetcher;
-        }, _contentDocumentTextPreprocessor);
+      if (!readiumOptions.useSimpleLoader){
+        readerOptions.iframeLoader = new IframeZipLoader(function() { return _currentPublicationFetcher; }, _contentDocumentTextPreprocessor);
       }
-      else {
+      else{
         readerOptions.iframeLoader = new IframeLoader();
       }
 
@@ -110,18 +109,19 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
           cacheSizeEvictThreshold = readiumOptions.cacheSizeEvictThreshold;
         }
 
-        _currentPublicationFetcher = new PublicationFetcher(ebookURL, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, contentType, readerOptions, onError);
+        _currentPublicationFetcher = new PublicationFetcher(ebookURL, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, contentType);
 
-        _currentPublicationFetcher.initialize(function (resourceFetcher) {
+        _currentPublicationFetcher.initialize(function(resourceFetcher) {
 
           if (!resourceFetcher) {
+
             callback(undefined);
             return;
           }
 
-          var _packageParser = new PackageParser(_currentPublicationFetcher, onError);
+          var _packageParser = new PackageParser(_currentPublicationFetcher);
 
-          _packageParser.parse(function (packageDocument) {
+          _packageParser.parse(function(packageDocument){
 
             if (!packageDocument) {
 
@@ -133,6 +133,10 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
             var openBookData = $.extend(packageDocument.getSharedJsPackageData(), openBookOptions);
 
             if (openPageRequest) {
+              // resolve package CFI (targeting a spine item ref) to an idref value if provided
+              if (openPageRequest.spineItemCfi) {
+                openPageRequest.idref = packageDocument.getSpineItemIdrefFromCFI(openPageRequest.spineItemCfi);
+              }
               openBookData.openPageRequest = openPageRequest;
             }
             self.reader.openBook(openBookData);
@@ -196,7 +200,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
                   allResponseHeaders = xhr.getAllResponseHeaders();
                   if (allResponseHeaders) {
                     allResponseHeaders = allResponseHeaders.toLowerCase();
-                  } else allResponseHeaders = '';
+                  } else allResponseHeaders ='';
                   //console.debug(allResponseHeaders);
                 }
 

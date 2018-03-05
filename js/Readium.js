@@ -109,7 +109,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
           cacheSizeEvictThreshold = readiumOptions.cacheSizeEvictThreshold;
         }
 
-        _currentPublicationFetcher = new PublicationFetcher(ebookURL, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, contentType);
+        _currentPublicationFetcher = new PublicationFetcher(ebookURL, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, contentType, readerOptions, onError);
 
         _currentPublicationFetcher.initialize(function(resourceFetcher) {
 

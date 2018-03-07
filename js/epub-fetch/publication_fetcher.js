@@ -332,13 +332,12 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
 
                 if (!optionalFetch) {
                     if (err) {
-                        console.error(err);
-
                         if (err.message) {
-                            console.debug(err.message);
-                        }
-                        if (err.stack) {
-                            console.log(err.stack);
+                            console.warn(err.message);
+                        } else if (err.stack) {
+                            console.warn(err.stack);
+                        } else {
+                          console.error(err);
                         }
                     }
                 }

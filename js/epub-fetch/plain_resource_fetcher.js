@@ -90,7 +90,7 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
                     // beforeSend: function( xhr ) {
                     //     xhr.overrideMimeType("text/plain; charset=UTF-8");
                     // },
-                    isLocal: fileUrl.indexOf("http") === 0 ? false : true,
+                    isLocal: fileUrl.indexOf("http") !== 0,
                     url: fileUrl,
                     dataType: 'text', //https://api.jquery.com/jQuery.ajax/
                     async: true,

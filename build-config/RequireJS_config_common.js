@@ -82,7 +82,7 @@ require.config({
             process._RJS_rootDir(2) + '/node_modules/bowser/bowser',
 
         'forge':
-            process._RJS_rootDir(2) + '/lib/forge.min',
+            process._RJS_rootDir(2) + '/lib/forge.readium.min',
 
         'promise':
             process._RJS_rootDir(2) + '/lib/promise.min'

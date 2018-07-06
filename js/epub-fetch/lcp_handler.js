@@ -153,17 +153,17 @@ define(['forge', 'promise'], function (forge, es6Promise) {
         function aesCbcDecipher(key, encryptedBytes) {
             return new Promise(function (resolve, reject) {
                 try {
-                    const decipher = forge.cipher.createDecipher('AES-CBC', key);
+                    var decipher = forge.cipher.createDecipher('AES-CBC', key);
                     decipher.start({iv: encryptedBytes.substring(0, IV_BYTES_SIZE)});
 
-                    const length = encryptedBytes.length;
-                    const chunkSize = CBC_CHUNK_SIZE;
+                    var length = encryptedBytes.length;
+                    var chunkSize = CBC_CHUNK_SIZE;
                     let index = IV_BYTES_SIZE;
                     let decrypted = '';
 
                     do {
                         decrypted += decipher.output.getBytes();
-                        const buf = forge.util.createBuffer(encryptedBytes.substr(index, chunkSize));
+                        var buf = forge.util.createBuffer(encryptedBytes.substr(index, chunkSize));
                         decipher.update(buf);
                         index += chunkSize;
                     } while (index < length);

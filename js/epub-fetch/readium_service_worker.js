@@ -36,8 +36,8 @@ self.addEventListener('activate', function(event) {
   function onActivate(version) {
     return caches.keys()
       .then(function(cacheKeys) {
-        const oldCacheKeys = cacheKeys.filter(function(key) { return key.indexOf(version) !== 0; });
-        const deletePromises = oldCacheKeys.map(function(oldKey) { return caches.delete(oldKey); });
+        var oldCacheKeys = cacheKeys.filter(function(key) { return key.indexOf(version) !== 0; });
+        var deletePromises = oldCacheKeys.map(function(oldKey) { return caches.delete(oldKey); });
         return Promise.all(deletePromises);
       });
   }
@@ -83,7 +83,7 @@ self.addEventListener('fetch', function (event) {
 
 function addToCache(cacheKey, request, response) {
   if (request.url.indexOf('file://') === -1 && response.ok) {
-    const copy = response.clone();
+    var copy = response.clone();
     caches.open(cacheKey).then(function(cache) {
       cache.put(request, copy);
     });

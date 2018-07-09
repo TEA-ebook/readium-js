@@ -145,7 +145,9 @@ define(['forge', 'promise'], function (forge, es6Promise) {
                 return aesCbcDecipher(key, arrayBuffer2Binary(encryptedData));
             }
             if (dataType === 'blob') {
-                return blobToBinary(encryptedData).then(binaryData => aesCbcDecipher(key, binaryData));
+                return blobToBinary(encryptedData).then(function(binaryData) {
+                    return aesCbcDecipher(key, binaryData);
+                });
             }
             return aesCbcDecipher(key, encryptedData);
         }
@@ -158,8 +160,8 @@ define(['forge', 'promise'], function (forge, es6Promise) {
 
                     var length = encryptedBytes.length;
                     var chunkSize = CBC_CHUNK_SIZE;
-                    let index = IV_BYTES_SIZE;
-                    let decrypted = '';
+                    var index = IV_BYTES_SIZE;
+                    var decrypted = '';
 
                     do {
                         decrypted += decipher.output.getBytes();

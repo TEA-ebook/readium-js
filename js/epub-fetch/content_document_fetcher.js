@@ -283,7 +283,7 @@ define(
 
             function preprocessCssStyleSheetData(styleSheetResourceData, styleSheetUriRelativeToPackageDocument,
                                                  callback) {
-                var cssUrlRegexp = /[Uu][Rr][Ll]\(\s*([']([^']+)[']|["]([^"]+)["]|([^)]+))\s*\)/g;
+                var cssUrlRegexp = /[Uu][Rr][Ll]\(\s*(['"]([^'"?#]+)(?:[?#]?[^)\s]*)?['"])\s*\)/g;
                 var nonUrlCssImportRegexp = /@[Ii][Mm][Pp][Oo][Rr][Tt]\s*('([^']+)'|"([^"]+)")/g;
                 var stylesheetCssResourceUrlsMap = {};
                 var cssResourceDownloadDeferreds = [];
@@ -296,11 +296,12 @@ define(
                         var isStyleSheetResource = false;
                         // Special handling of @import-ed stylesheet files - recursive preprocessing:
                         // TODO: will not properly handle @import url(...):
-                        if (processingRegexp == nonUrlCssImportRegexp) {
+                        if (processingRegexp === nonUrlCssImportRegexp) {
                             // This resource URL points to an @import-ed CSS stylesheet file. Need to preprocess its text
                             // after fetching but before making an object URL of it:
                             isStyleSheetResource = true;
                         }
+
                         fetchResourceForCssUrlMatch(cssUrlMatch, cssResourceDownloadDeferreds,
                             styleSheetUriRelativeToPackageDocument, stylesheetCssResourceUrlsMap, isStyleSheetResource);
                         cssUrlMatch = processingRegexp.exec(styleSheetResourceData);

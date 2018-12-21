@@ -81,7 +81,7 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
             if (decryptionFunction) {
                 var type = ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot);
                 fetchFileContents(pathRelativeToPackageRoot, function (data) {
-                    decryptionFunction(data, fetchCallback, 'text', type);
+                    decryptionFunction(pathRelativeToPackageRoot, data, fetchCallback, 'text', type);
                 }, onerror);
             } else {
                 $.ajax({
@@ -110,7 +110,7 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
             if (decryptionFunction) {
                 var origFetchCallback = fetchCallback;
                 fetchCallback = function (unencryptedBlob) {
-                    decryptionFunction(unencryptedBlob, function (decryptedBlob) {
+                    decryptionFunction(pathRelativeToPackageRoot, unencryptedBlob, function (decryptedBlob) {
                         origFetchCallback(decryptedBlob);
                     });
                 };

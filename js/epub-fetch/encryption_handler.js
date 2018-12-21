@@ -18,7 +18,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
 
         var LCP_RETRIEVAL_KEY = 'license.lcpl#/encryption/content_key';
 
-        var lcpHandler = encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData.infos, onError) : false;
+        var lcpHandler = encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData, onError) : false;
 
         var ENCRYPTION_METHODS = {
             'http://www.idpf.org/2008/embedding': embeddedFontDeobfuscateIdpf,
@@ -54,7 +54,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             });
         }
 
-        function embeddedFontDeobfuscateIdpf(obfuscatedResourceBlob, callback) {
+        function embeddedFontDeobfuscateIdpf(path, obfuscatedResourceBlob, callback) {
 
             var prefixLength = 1040;
             // Shamelessly copied from
@@ -79,7 +79,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             return byteArray;
         }
 
-        function embeddedFontDeobfuscateAdobe(obfuscatedResourceBlob, callback) {
+        function embeddedFontDeobfuscateAdobe(path, obfuscatedResourceBlob, callback) {
 
             // extract the UUID and convert to big-endian binary form (16 bytes):
             var uidWordArray = urnUuidToByteArray(encryptionData.uid);
@@ -172,6 +172,12 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
             retrievalMethod = retrievalMethods.first().attr('URI');
           }
 
+          var compressionMethod = false;
+          var compressionMethods = $('Compression', encryptedData);
+          if (compressionMethods.length > 0) {
+              compressionMethod = parseInt(compressionMethods.first().attr('Method'), 10);
+          }
+
           // For some reason, jQuery selector "" against XML DOM sometimes doesn't match properly
           var cipherReference = data.find("enc\\:CipherReference, CipherReference");
           cipherReference.each(function (index, CipherReference) {
@@ -189,8 +195,13 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
               encryptionData.encryptions = {};
             }
 
+            if (!encryptionData.compressionMethods) {
+              encryptionData.compressionMethods = {};
+            }
+
             encryptionData.encryptions[cipherReferenceURI] = encryptionAlgorithm;
             encryptionData.retrievalKeys[cipherReferenceURI] = retrievalMethod;
+            encryptionData.compressionMethods[cipherReferenceURI] = compressionMethod;
           });
         });
 

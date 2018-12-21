@@ -84,6 +84,9 @@ require.config({
         'forge':
             process._RJS_rootDir(2) + '/lib/forge.readium.min',
 
+        'pako':
+            process._RJS_rootDir(2) + '/lib/pako_inflate.min',
+
         'promise':
             process._RJS_rootDir(2) + '/lib/promise.min'
     },

@@ -192,7 +192,7 @@ define(['jquery', 'URIjs', './discover_content_type', 'zip-ext', 'readium_shared
             if (decryptionFunction) {
                 fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
                     entry.getBlob(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot), function (blob) {
-                        decryptionFunction(blob, fetchCallback, 'text');
+                        decryptionFunction(relativePathRelativeToPackageRoot, blob, fetchCallback, 'text');
                     }, undefined, _checkCrc32);
                 }, onerror);
             } else {
@@ -207,7 +207,7 @@ define(['jquery', 'URIjs', './discover_content_type', 'zip-ext', 'readium_shared
             if (decryptionFunction) {
                 fetchFileContents(relativePathRelativeToPackageRoot, function (entry) {
                     entry.getBlob(ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot), function (blob) {
-                        decryptionFunction(blob, fetchCallback, 'data64');
+                        decryptionFunction(relativePathRelativeToPackageRoot, blob, fetchCallback, 'data64');
                     }, undefined, _checkCrc32);
                 }, onerror);
             } else {
@@ -223,7 +223,7 @@ define(['jquery', 'URIjs', './discover_content_type', 'zip-ext', 'readium_shared
             if (decryptionFunction) {
                 var origFetchCallback = fetchCallback;
                 fetchCallback = function (unencryptedBlob) {
-                    decryptionFunction(unencryptedBlob, function (decryptedBlob) {
+                    decryptionFunction(relativePathRelativeToPackageRoot, unencryptedBlob, function (decryptedBlob) {
                         origFetchCallback(decryptedBlob);
                     }, 'blob', ContentTypeDiscovery.identifyContentTypeFromFileName(relativePathRelativeToPackageRoot));
                 };

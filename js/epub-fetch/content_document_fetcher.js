@@ -283,7 +283,7 @@ define(
 
             function preprocessCssStyleSheetData(styleSheetResourceData, styleSheetUriRelativeToPackageDocument,
                                                  callback) {
-                var cssUrlRegexp = /[Uu][Rr][Ll]\(\s*(['"]([^'"?#]+)(?:[?#]?[^)\s]*)?['"])\s*\)/g;
+                var cssUrlRegexp = /[Uu][Rr][Ll]\(\s*(['"]?([^'"?#\)]+)(?:[?#]?[^)\s]*)?['"]?)\s*\)/g;
                 var nonUrlCssImportRegexp = /@[Ii][Mm][Pp][Oo][Rr][Tt]\s*('([^']+)'|"([^"]+)")/g;
                 var stylesheetCssResourceUrlsMap = {};
                 var cssResourceDownloadDeferreds = [];

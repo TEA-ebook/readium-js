@@ -112,7 +112,7 @@ define(['jquery', 'URIjs', './discover_content_type'], function ($, URI, Content
                 fetchCallback = function (unencryptedBlob) {
                     decryptionFunction(pathRelativeToPackageRoot, unencryptedBlob, function (decryptedBlob) {
                         origFetchCallback(decryptedBlob);
-                    });
+                    }, 'blob', ContentTypeDiscovery.identifyContentTypeFromFileName(pathRelativeToPackageRoot));
                 };
             }
             fetchFileContents(pathRelativeToPackageRoot, function (contentsArrayBuffer) {

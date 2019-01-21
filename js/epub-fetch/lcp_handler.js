@@ -13,10 +13,10 @@
 
 define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
-    const LCP_BASIC_PROFILE = 'http://readium.org/lcp/basic-profile';
-    const LCP_PROFILE_1_0 = 'http://readium.org/lcp/profile-1.0';
+    var LCP_BASIC_PROFILE = 'http://readium.org/lcp/basic-profile';
+    var LCP_PROFILE_1_0 = 'http://readium.org/lcp/profile-1.0';
 
-    const lcpProfiles = [LCP_BASIC_PROFILE, LCP_PROFILE_1_0];
+    var lcpProfiles = [LCP_BASIC_PROFILE, LCP_PROFILE_1_0];
 
     var IV_BYTES_SIZE = 16;
     var CBC_CHUNK_SIZE = 1024 * 32; // best perf with 32ko chunks
@@ -24,6 +24,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
     var READ_AS_BINARY_STRING_AVAILABLE = typeof FileReader.prototype.readAsBinaryString === 'function';
 
     es6Promise.polyfill();
+    objectPolyfill();
 
     var LcpHandler = function (encryptionData, onError) {
 
@@ -80,7 +81,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
                 });
 
                 // encryption profile
-                if (!lcpProfiles.includes(license.encryption.profile)) {
+                if (lcpProfiles.indexOf(license.encryption.profile) === -1) {
                     errors.push("Unknown encryption profile '" + license.encryption.profile + "'");
                 }
 
@@ -273,7 +274,8 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
             return 'binary';
         }
 
-        function unzip(data, fetchMode, compression = 8) {
+        function unzip(data, fetchMode, compression) {
+            compression = compression || 8;
             if (compression === 8) {
                 try {
                     var options = (fetchMode === 'blob') ? null : {to: 'string'};
@@ -344,3 +346,35 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
     return LcpHandler;
 });
+
+function objectPolyfill() {
+    if (typeof Object.assign != 'function') {
+        // Must be writable: true, enumerable: false, configurable: true
+        Object.defineProperty(Object, "assign", {
+            value: function assign(target, varArgs) { // .length of function is 2
+                'use strict';
+                if (target == null) { // TypeError if undefined or null
+                    throw new TypeError('Cannot convert undefined or null to object');
+                }
+
+                var to = Object(target);
+
+                for (var index = 1; index < arguments.length; index++) {
+                    var nextSource = arguments[index];
+
+                    if (nextSource != null) { // Skip over if undefined or null
+                        for (var nextKey in nextSource) {
+                            // Avoid bugs when hasOwnProperty is shadowed
+                            if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {
+                                to[nextKey] = nextSource[nextKey];
+                            }
+                        }
+                    }
+                }
+                return to;
+            },
+            writable: true,
+            configurable: true
+        });
+    }
+}

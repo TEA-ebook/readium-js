@@ -9,11 +9,8 @@
 //  other materials provided with the distribution.
 //  3. Neither the name of the organization nor the names of its contributors may be
 //  used to endorse or promote products derived from this software without specific
-//  prior written permission.
 
-
-define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser', 'readium_shared_js/views/iframe_loader', 'underscore', './discover_content_type'],
-  function(Globals, $, EventEmitter, URI, bowser, IFrameLoader, _, ContentTypeDiscovery) {
+define(['URIjs', 'readium_shared_js/views/iframe_loader', 'underscore', './discover_content_type', 'bowser'], function(URI, IFrameLoader, _, ContentTypeDiscovery, bowser) {
 
     var zipIframeLoader = function(getCurrentResourceFetcher, contentDocumentTextPreprocessor) {
 
@@ -111,8 +108,14 @@ define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser'
         this._loadIframeWithDocument = function (iframe, attachedData, contentDocumentData, callback) {
             var documentDataUri, blob;
 
-            // IE, Edge and Safari 6 for iOS don't handle Blobs correctly
-            var isBlobHandled = !bowser.msie && !bowser.msedge &&!(bowser.ios && (parseInt(bowser.version) < 7));
+            var chromeIOS = bowser.ios && bowser.chrome;
+            // IE and Safari 6 for iOS don't handle Blobs correctly
+            // Chrome on iOS fails to access iframe.contentWindow with BlobURI and data URL :(
+            var isBlobHandled = !chromeIOS // fallback to srcdoc
+                && !bowser.msie
+                && !(bowser.ios && (parseInt(bowser.version, 10) < 7))
+                && !bowser.samsungBrowser;
+
             if (isBlobHandled) {
                 var contentType = 'text/html';
                 if (attachedData.spineItem.media_type && attachedData.spineItem.media_type.length) {
@@ -125,13 +128,22 @@ define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser'
                     builder.append(contentDocumentData);
                     blob = builder.getBlob(contentType);
                 } else {
-                    blob = new Blob([contentDocumentData], { 'type': contentType });
+                    blob = new Blob([contentDocumentData], {'type': contentType});
                 }
                 documentDataUri = window.URL.createObjectURL(blob);
-            } else {
-                // Internet Explorer doesn't handle loading documents from Blobs correctly.
-                // TODO: Currently using the document.write() approach only for IE, as it breaks CSS selectors
-                // with namespaces for some reason (e.g. the childrens-media-query sample EPUB)
+
+                //Chrome on iOS:
+                //data URL as substitute to BlobURI ... still iframe.contentWindow silent crash :(
+                // var reader = new FileReader();
+                // reader.onload = function(e){
+                //     documentDataUri = reader.result;
+                //     iframe.setAttribute("src", documentDataUri);
+                //     // iframe.src = documentDataUri;
+                // }
+                // reader.readAsDataURL(blob);
+
+            } else if (!chromeIOS) {
+                // Note that this does not support CSS selectors with XHTML namespaces (e.g. epub:type)
                 iframe.contentWindow.document.open();
 
                 // Currently not handled automatically by winstore-jscompat,
@@ -282,8 +294,10 @@ define(['readium_shared_js/globals', 'jquery', 'eventEmitter', 'URIjs', 'bowser'
 
             if (isBlobHandled) {
                 iframe.setAttribute("src", documentDataUri);
-            } else {
+            } else if (!chromeIOS) {
                 iframe.contentWindow.document.close();
+            } else { // chromeIOS
+                iframe.setAttribute("srcdoc", contentDocumentData);
             }
         };
 

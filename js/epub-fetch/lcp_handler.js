@@ -1,14 +1,14 @@
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
 
 define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
@@ -17,6 +17,8 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
     var LCP_PROFILE_1_0 = 'http://readium.org/lcp/profile-1.0';
 
     var lcpProfiles = [LCP_BASIC_PROFILE, LCP_PROFILE_1_0];
+
+    var LCP_TEA_EBOOK_PROVIDER = 'www.tea-ebook.com';
 
     var IV_BYTES_SIZE = 16;
     var CBC_CHUNK_SIZE = 1024 * 32; // best perf with 32ko chunks
@@ -32,6 +34,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         var userKey;
         var contentKey;
         var encryptionInfos = encryptionData.infos;
+        var useOfficialLib = false;
 
         try {
             userKey = forge.util.hexToBytes(encryptionInfos.hash);
@@ -41,8 +44,18 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
         // LCP step by step verification functions
 
+        function isOfficialLcp(license) {
+            return license.provider !== LCP_TEA_EBOOK_PROVIDER && license.encryption.profile === LCP_PROFILE_1_0;
+        }
+
         function checkUserKey(license) {
             return new Promise(function (resolve, reject) {
+                // Official LCP -> key is already checked
+                if (isOfficialLcp(license)) {
+                    resolve(license);
+                    return;
+                }
+
                 var userKeyCheck = license.encryption.user_key.key_check;
 
                 // Decrypt and compare it to license ID
@@ -50,7 +63,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
                     if (license.id === userKeyCheckDecryptedData) {
                         resolve(license);
                     } else {
-                        reject(Error("User key is invalid"));
+                        reject(new Error("User key is invalid"));
                     }
                 }).catch(reject);
             });
@@ -288,9 +301,56 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
             return data;
         }
 
+        function decipherCare(path, dataType, encryptedAes256cbcContent, fetchMode) {
+            return decipher(contentKey, encryptedAes256cbcContent, dataType)
+                .then(function (data) {
+                    if (encryptionData.compressionMethods[path] === 8) {
+                        return unzip(data, fetchMode);
+                    }
+                    if (fetchMode === 'blob') {
+                        return binaryStringToUint8Array(data);
+                    }
+                    return data;
+                });
+        }
+
+        function decipherLcp(path, dataType, encryptedAes256cbcContent) {
+            return new Promise(function (resolve) {
+                function handleDecryptResponse(event) {
+                    const response = event.data;
+                    if (response.type !== ReadiumSDK.Events.SEND_DATA || response.data.path !== path) {
+                        // all the messages coming through the window object
+                        // can get here so we have to handle just the right one
+                        return;
+                    }
+                    resolve(response.data.content);
+
+                    // this is a one shot listener
+                    window.removeEventListener('message', handleDecryptResponse, false);
+                }
+
+                // we ask the electron app to decrypt data with lcp.node lib
+                ReadiumSDK.reader.emit(ReadiumSDK.Events.REMOTE_DECRYPT_DATA, {
+                    path,
+                    content: encryptedAes256cbcContent
+                });
+                window.addEventListener('message', handleDecryptResponse, false);
+            });
+        }
+
         // PUBLIC API
 
         this.checkLicense = function (license, callback, error) {
+            if (isOfficialLcp(license)) {
+                checkLicenseFields(license)
+                    .then(() => {
+                        useOfficialLib = true;
+                        callback();
+                    })
+                    .catch(error);
+                return;
+            }
+
             checkUserKey(license)
                 .then(checkLicenseFields)
                 .then(checkLicenseSignature)
@@ -309,16 +369,9 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
                 mimeType = encryptedAes256cbcContent.type;
             }
 
-            decipher(contentKey, encryptedAes256cbcContent, dataType)
-                .then(function (data) {
-                    if (encryptionData.compressionMethods[path] === 8) {
-                        return unzip(data, fetchMode);
-                    }
-                    if (fetchMode === 'blob') {
-                        return binaryStringToUint8Array(data);
-                    }
-                    return data;
-                })
+            var decipherMethod = useOfficialLib === true ? decipherLcp : decipherCare;
+
+            decipherMethod(path, dataType, encryptedAes256cbcContent, fetchMode)
                 .then(function (decryptedBinaryData) {
                     if (fetchMode === 'text') {
                         // convert UTF-8 decoded data to UTF-16 javascript string (with BOM removal)

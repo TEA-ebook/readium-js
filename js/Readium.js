@@ -96,7 +96,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
       this.reader = new ReaderView(readerOptions);
       ReadiumSDK.reader = this.reader;
 
-      var openPackageDocument_ = function (ebookURL, callback, openPageRequest, contentType) {
+      var openPackageDocument_ = function (ebookURL, ebookLicense, callback, openPageRequest, contentType) {
         if(ebookURL instanceof Blob && navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage(ebookURL);
         } else {
@@ -112,7 +112,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
           cacheSizeEvictThreshold = readiumOptions.cacheSizeEvictThreshold;
         }
 
-        _currentPublicationFetcher = new PublicationFetcher(ebookURL, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, contentType, readerOptions, onError);
+        _currentPublicationFetcher = new PublicationFetcher(ebookURL, ebookLicense, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, contentType, readerOptions, onError);
 
         _currentPublicationFetcher.initialize(function(resourceFetcher) {
 

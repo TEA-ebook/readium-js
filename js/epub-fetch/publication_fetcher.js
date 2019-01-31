@@ -16,7 +16,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
     function ($, URI, MarkupParser, PlainResourceFetcher, ZipResourceFetcher, ContentDocumentFetcher,
               ResourceCache, EncryptionHandler, ContentTypeDiscovery, Helpers) {
 
-    var PublicationFetcher = function(ebookURL, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor, contentType, options, onError) {
+    var PublicationFetcher = function(ebookURL, ebookLicense, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor, contentType, options, onError) {
 
         var self = this;
 
@@ -48,11 +48,11 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
             // Non exploded EPUBs (i.e. zipped .epub documents) should be fetched in a programmatical manner:
             _shouldConstructDomProgrammatically = !isEpubExploded;
             console.log("_shouldConstructDomProgrammatically INIT: " + _shouldConstructDomProgrammatically);
-            
+
             createResourceFetcher(isEpubExploded, function(resourceFetcher) {
-    
+
                 //NOTE: _resourceFetcher == resourceFetcher
-                
+
                 self.getPackageDom(
                     function() {callback(resourceFetcher);},
                     function(error) {console.error("unable to find package document: " + error); callback(undefined);}
@@ -77,9 +77,9 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                     _contentType.indexOf("application/octet-stream") >= 0
                 )
                ) return false;
-            
+
             var uriTrimmed = ebookURL;
-            
+
             try {
                 //.absoluteTo("http://readium.org/epub")
                 uriTrimmed = new URI(uriTrimmed).search('').hash('').toString();
@@ -87,10 +87,10 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                 console.error(err);
                 console.log(ebookURL);
             }
-            
+
             // dumb test: ends with ".epub" file extension
             return  !(/\.epub[3?]$/.test(uriTrimmed));
-            
+
             // var ext = ".epub";
             // return ebookURL.indexOf(ext, ebookURL.length - ext.length) === -1;
         }
@@ -107,7 +107,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
             }
         }
 
-        
+
         // PUBLIC API
 
         /**
@@ -155,7 +155,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
          * false if documents can be fed directly into a window or iframe by src URL without using special fetching logic.
          */
         this.shouldConstructDomProgrammatically = function (){
-            
+
             return _shouldConstructDomProgrammatically;
         };
 
@@ -174,10 +174,10 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
         };
 
         this.getEbookURL_FilePath = function() {
-            
+
             return Helpers.getEbookUrlFilePath(ebookURL);
         };
-        
+
         this.getJsLibRoot = function() {
             return jsLibRoot;
         };
@@ -190,7 +190,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
         this.getPackageUrl = function() {
             return _packageDocumentAbsoluteUrl;
         };
-        
+
         this.getPackageFullPathRelativeToBase = function() {
               return _packageFullPath;
         };
@@ -208,9 +208,9 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
         };
 
         this.getFileContentsFromPackage = function(filePathRelativeToPackageRoot, callback, onerror) {
-            
+
             // AVOID INVOKING fetchFileContentsText() directly, use relativeToPackageFetchFileContents() wrapper instead so that additional checks are performed.
-            
+
             // META-INF/container.xml initial fetch, see this.initialize()
             if (!_packageFullPath) {
                 console.debug("FETCHING (INIT) ... " + filePathRelativeToPackageRoot);
@@ -428,9 +428,13 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                     // get LCP license
                     if (_encryptionHandler.isLcpEncryptionSpecified()) {
                         packageMetadata.protection = 'LCP';
-                        self.getLicenseLcp(function (license) {
-                            _encryptionHandler.checkLicense(license, settingFinishedCallback, onError);
-                        }, onError);
+                        if (ebookLicense) {
+                            _encryptionHandler.checkLicense(ebookLicense, settingFinishedCallback, onError);
+                        } else {
+                            self.getLicenseLcp(function (license) {
+                                _encryptionHandler.checkLicense(license, settingFinishedCallback, onError);
+                            }, onError);
+                        }
                     } else {
                         settingFinishedCallback();
                     }

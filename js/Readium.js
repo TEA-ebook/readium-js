@@ -153,7 +153,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
         });
       };
 
-      this.openPackageDocument = function (ebookURL, callback, openPageRequest) {
+      this.openPackageDocument = function (ebookURL, ebookLicense, callback, openPageRequest) {
 
         if (!(ebookURL instanceof Blob)
           && !(ebookURL instanceof File)
@@ -228,7 +228,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
                 }
               }
 
-              openPackageDocument_(ebookURL, callback, openPageRequest, contentType);
+              openPackageDocument_(ebookURL, ebookLicense, callback, openPageRequest, contentType);
             };
             xhr.open('HEAD', ebookURL, true);
             //xhr.responseType = 'blob';
@@ -238,7 +238,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
           }
         }
 
-        openPackageDocument_(ebookURL, callback, openPageRequest);
+        openPackageDocument_(ebookURL, ebookLicense, callback, openPageRequest);
       };
 
       this.closePackageDocument = function () {

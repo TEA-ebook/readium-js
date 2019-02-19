@@ -139,6 +139,11 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
               // resolve package CFI (targeting a spine item ref) to an idref value if provided
               if (openPageRequest.spineItemCfi) {
                 openPageRequest.idref = packageDocument.getSpineItemIdrefFromCFI(openPageRequest.spineItemCfi);
+              } else if (openPageRequest.spineIndex) {
+                  var spineItem = packageDocument.getSpineItem(openPageRequest.spineIndex);
+                  if (spineItem) {
+                      openPageRequest.idref = spineItem.idref;
+                  }
               }
               openBookData.openPageRequest = openPageRequest;
             }

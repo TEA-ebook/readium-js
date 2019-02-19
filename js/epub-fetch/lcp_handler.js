@@ -317,7 +317,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         function decipherLcp(path, dataType, encryptedAes256cbcContent) {
             return new Promise(function (resolve) {
                 function handleDecryptResponse(event) {
-                    const response = event.data;
+                    var response = event.data;
                     if (response.type !== ReadiumSDK.Events.SEND_DATA || response.data.path !== path) {
                         // all the messages coming through the window object
                         // can get here so we have to handle just the right one
@@ -331,7 +331,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
                 // we ask the electron app to decrypt data with lcp.node lib
                 ReadiumSDK.reader.emit(ReadiumSDK.Events.REMOTE_DECRYPT_DATA, {
-                    path,
+                    path: path,
                     content: encryptedAes256cbcContent
                 });
                 window.addEventListener('message', handleDecryptResponse, false);
@@ -343,7 +343,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         this.checkLicense = function (license, callback, error) {
             if (isOfficialLcp(license)) {
                 checkLicenseFields(license)
-                    .then(() => {
+                    .then(function() {
                         useOfficialLib = true;
                         callback();
                     })

@@ -32,6 +32,26 @@ define(['URIjs', 'readium_shared_js/views/iframe_loader', 'underscore', './disco
             basicIframeLoader.updateIframeEvents(iframe);
         };
 
+        var dynamicElementListener = function (message) {
+          if (message.data.type === 'DynamicElementsLoaded') {
+            var publicationFetcher = getCurrentResourceFetcher();
+            message.data.elements.forEach(element => {
+              publicationFetcher.relativeToPackageFetchFileContents(element.src, 'blob', function (blob) {
+                var iframe = window.document.querySelector('iframe[data-loaduri="' + message.data.iframeSrc + '"]');
+                if (!iframe) {
+                  return;
+                }
+                var elementNode = iframe.contentDocument.querySelector(element.tag + '[src="' + element.src + '"]');
+                if (elementNode) {
+                  elementNode.setAttribute('src', window.URL.createObjectURL(blob));
+                }
+              });
+            });
+          }
+        };
+
+        window.addEventListener('message', dynamicElementListener, true);
+
         this.loadIframe = function(iframe, src, callback, caller, attachedData) {
 
             if (!iframe.baseURI) {
@@ -162,7 +182,7 @@ define(['URIjs', 'readium_shared_js/views/iframe_loader', 'underscore', './disco
                 // prevent epub own programmatic navigation
                 if (iframe.src !== "" && iframe.contentWindow !== null && iframe.src !== iframe.contentWindow.location.href) {
                   $(iframe).contents().empty();
-                  self.emit(Globals.Events.SCRIPT_NAVIGATION_DETECTED, iframe.contentWindow.location.href);
+                  self.emit(ReadiumSDK.Events.SCRIPT_NAVIGATION_DETECTED, iframe.contentWindow.location.href);
                   return;
                 }
 

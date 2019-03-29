@@ -39,8 +39,39 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
         }
 
         function injectedScript() {
-
           navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
+
+          var observer;
+          window.addEventListener('DOMContentLoaded', function () {
+            observer = new MutationObserver(function (mutations) {
+              var elementsWithSrc = mutations.reduce(function (addedNodes, mutation) {
+                var nodes = Array.from(mutation.addedNodes).filter(function(node) {
+                  if (node.nodeType !== Node.ELEMENT_NODE) {return false;}
+                  return node.hasAttribute('src');
+                });
+                return addedNodes.concat(nodes);
+              }, []);
+              if (elementsWithSrc.length) {
+                window.parent.postMessage({
+                  type: 'DynamicElementsLoaded',
+                  elements: elementsWithSrc.map(function (el) {
+                    return {
+                      tag: el.tagName,
+                      src: el.getAttribute('src')
+                    };
+                  }),
+                  iframeSrc: '{{SRC}}'
+                }, '*');
+              }
+            });
+            observer.observe(window.document.body, {childList: true, subtree: true});
+          });
+
+          window.addEventListener('unload', function () {
+            if (observer) {
+              observer.disconnect();
+            }
+          });
         }
 
         var sourceParts = src.split("/");
@@ -51,7 +82,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
         console.log(baseHref);
         var base = "<base href=\"" + encodeURI(escapeMarkupEntitiesInUrl(baseHref)) + "\"/>";
 
-        var scripts = "<script type=\"text/javascript\">(" + injectedScript.toString() + ")()<\/script>";
+        var scripts = "<script type=\"text/javascript\">(" + injectedScript.toString().replace('{{SRC}}', src.toString()) + ")()<\/script>";
 
         if (_options && _options.mathJaxUrl && contentDocumentHtml.search(/<(\w+:|)(?=math)/) >= 0) {
           scripts += "<script type=\"text/javascript\" src=\"" + _options.mathJaxUrl + "\"> <\/script>";

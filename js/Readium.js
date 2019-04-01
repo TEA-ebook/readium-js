@@ -64,7 +64,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
                 }, '*');
               }
             });
-            observer.observe(window.document.body, {childList: true, subtree: true});
+            observer.observe(window.document.querySelector('html'), {childList: true, subtree: true});
           });
 
           window.addEventListener('unload', function () {

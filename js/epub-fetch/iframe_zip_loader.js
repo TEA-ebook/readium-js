@@ -35,7 +35,7 @@ define(['URIjs', 'readium_shared_js/views/iframe_loader', 'underscore', './disco
         var dynamicElementListener = function (message) {
           if (message.data.type === 'DynamicElementsLoaded') {
             var publicationFetcher = getCurrentResourceFetcher();
-            message.data.elements.forEach(element => {
+            message.data.elements.forEach(function (element) {
               publicationFetcher.relativeToPackageFetchFileContents(element.src, 'blob', function (blob) {
                 var iframe = window.document.querySelector('iframe[data-loaduri="' + message.data.iframeSrc + '"]');
                 if (!iframe) {

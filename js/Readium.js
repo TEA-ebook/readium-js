@@ -41,9 +41,8 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
         function injectedScript() {
           navigator.epubReadingSystem = window.parent.navigator.epubReadingSystem;
 
-          var observer;
           window.addEventListener('DOMContentLoaded', function () {
-            observer = new MutationObserver(function (mutations) {
+            navigator.domObserver = new MutationObserver(function (mutations) {
               var elementsWithSrc = mutations.reduce(function (addedNodes, mutation) {
                 var nodes = Array.from(mutation.addedNodes).filter(function(node) {
                   if (node.nodeType !== Node.ELEMENT_NODE) {return false;}
@@ -64,12 +63,12 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
                 }, '*');
               }
             });
-            observer.observe(window.document.querySelector('html'), {childList: true, subtree: true});
+            navigator.domObserver.observe(window.document.querySelector('html'), {childList: true, subtree: true});
           });
 
           window.addEventListener('unload', function () {
-            if (observer) {
-              observer.disconnect();
+            if (navigator.domObserver) {
+              navigator.domObserver.disconnect();
             }
           });
         }
@@ -82,7 +81,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
         console.log(baseHref);
         var base = "<base href=\"" + encodeURI(escapeMarkupEntitiesInUrl(baseHref)) + "\"/>";
 
-        var scripts = "<script type=\"text/javascript\">(" + injectedScript.toString().replace('{{SRC}}', src.toString()) + ")()<\/script>";
+        var scripts = "<script type=\"text/javascript\"><![CDATA[(" + injectedScript.toString().replace('{{SRC}}', src.toString()) + ")()]]><\/script>";
 
         if (_options && _options.mathJaxUrl && contentDocumentHtml.search(/<(\w+:|)(?=math)/) >= 0) {
           scripts += "<script type=\"text/javascript\" src=\"" + _options.mathJaxUrl + "\"> <\/script>";

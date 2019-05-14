@@ -1,5 +1,5 @@
 var config = {
-  version: 'ninja-8',
+  version: 'readium-8',
   epubPattern: /\w\.epub\/(.*)$/
 };
 
@@ -21,9 +21,12 @@ var mimeTypeMap = {
 };
 
 self.addEventListener('message', function (event) {
-  self.epubData = event.data;
+  if (event.data.action !== 'loadEbook') {
+    return;
+  }
+  self.epubData = event.data.data;
   self.epubZip = null;
-  JSZip.loadAsync(event.data).then(function(zip) {
+  JSZip.loadAsync(event.epubData).then(function(zip) {
     self.epubZip = zip;
   });
 });
@@ -36,8 +39,8 @@ self.addEventListener('activate', function(event) {
   function onActivate(version) {
     return caches.keys()
       .then(function(cacheKeys) {
-        var oldCacheKeys = cacheKeys.filter(function(key) { return key.indexOf(version) !== 0; });
-        var deletePromises = oldCacheKeys.map(function(oldKey) { return caches.delete(oldKey); });
+        const oldCacheKeys = cacheKeys.filter(key => key.match('readium-') && key !== version);
+        const deletePromises = oldCacheKeys.map(oldKey => caches.delete(oldKey));
         return Promise.all(deletePromises);
       });
   }

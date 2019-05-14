@@ -128,7 +128,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
 
       var openPackageDocument_ = function (ebookURL, ebookLicense, callback, openPageRequest, contentType) {
         if(ebookURL instanceof Blob && navigator.serviceWorker.controller) {
-          navigator.serviceWorker.controller.postMessage(ebookURL);
+          navigator.serviceWorker.controller.postMessage({action: 'loadEbook', data: ebookURL});
         } else {
           console.warn('no service worker controller available, smil audio will fail.');
         }

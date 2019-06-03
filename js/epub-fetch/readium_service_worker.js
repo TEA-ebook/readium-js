@@ -26,7 +26,7 @@ self.addEventListener('message', function (event) {
   }
   self.epubData = event.data.data;
   self.epubZip = null;
-  JSZip.loadAsync(event.epubData).then(function(zip) {
+  JSZip.loadAsync(self.epubData).then(function(zip) {
     self.epubZip = zip;
   });
 });

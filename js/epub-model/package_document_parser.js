@@ -65,7 +65,7 @@ define(['jquery', 'underscore', '../epub-fetch/markup_parser', 'URIjs', './packa
                     callback(undefined);
                     return;
                 }
-                
+
                 var metadata = getMetadata(xmlDom);
 
                 var spineElem = xmlDom.getElementsByTagNameNS("*", "spine")[0];

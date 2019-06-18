@@ -18,7 +18,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
     var lcpProfiles = [LCP_BASIC_PROFILE, LCP_PROFILE_1_0];
 
-    var LCP_TEA_EBOOK_PROVIDER = 'www.tea-ebook.com';
+    var LCP_TEA_EBOOK_PROVIDERS = ['www.tea-ebook.com', 'www.tea-ebook.com-PP'];
 
     var IV_BYTES_SIZE = 16;
     var CBC_CHUNK_SIZE = 1024 * 32; // best perf with 32ko chunks
@@ -45,7 +45,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         // LCP step by step verification functions
 
         function isOfficialLcp(license) {
-            return license.provider !== LCP_TEA_EBOOK_PROVIDER && license.encryption.profile === LCP_PROFILE_1_0;
+            return !LCP_TEA_EBOOK_PROVIDERS.includes(license.provider) && license.encryption.profile === LCP_PROFILE_1_0;
         }
 
         function checkUserKey(license) {

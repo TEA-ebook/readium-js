@@ -363,7 +363,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         };
 
         this.decryptContent = function (path, encryptedAes256cbcContent, callback, fetchMode, mimeType) {
-            var dataType = getTypeOfData(encryptedAes256cbcContent), data;
+            var dataType = getTypeOfData(encryptedAes256cbcContent);
 
             if (!mimeType && dataType === 'blob') {
                 mimeType = encryptedAes256cbcContent.type;
@@ -374,8 +374,13 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
             decipherMethod(path, dataType, encryptedAes256cbcContent, fetchMode)
                 .then(function (decryptedBinaryData) {
                     if (fetchMode === 'text') {
-                        // convert UTF-8 decoded data to UTF-16 javascript string (with BOM removal)
-                        data = decryptedBinaryData.replace(/^ï»¿/, '');
+                        // BOM removal
+                        if (decryptedBinaryData.charCodeAt(0) === 0xFEFF) {
+                          decryptedBinaryData = decryptedBinaryData.substr(1);
+                        }
+                        var data = decryptedBinaryData.replace(/^ï»¿/, '');
+
+                        // convert UTF-8 decoded data to UTF-16 javascript string
                         if (/html/.test(mimeType)) {
                             try {
                                 data = forge.util.decodeUtf8(data);
@@ -389,7 +394,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
                         callback(forge.util.encode64(decryptedBinaryData.data));
                     } else {
                         // convert into a blob
-                        callback(new Blob([decryptedBinaryData], { type: mimeType }));
+                        callback(new Blob([decryptedBinaryData], {type: mimeType}));
                     }
                 }).catch(function (error) {
                 console.error("Can't decrypt LCP content", error);

@@ -313,7 +313,7 @@ define(['URIjs', 'readium_shared_js/views/iframe_loader', 'underscore', './disco
             };
 
             if (isBlobHandled) {
-                iframe.setAttribute("src", documentDataUri);
+                iframe.contentWindow.location.replace(documentDataUri);
             } else if (!chromeIOS) {
                 iframe.contentWindow.document.close();
             } else { // chromeIOS

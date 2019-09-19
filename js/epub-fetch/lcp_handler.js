@@ -98,18 +98,20 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
                     errors.push("Unknown encryption profile '" + license.encryption.profile + "'");
                 }
 
-                // rights dates
-                if (license.rights.start) {
-                    var rightsStart = new Date(license.rights.start);
-                    if (rightsStart.getTime() > Date.now()) {
-                        errors.push("License rights are not valid yet");
+                // rights
+                if (license.rights) {
+                    if (license.rights.start) {
+                        var rightsStart = new Date(license.rights.start);
+                        if (rightsStart.getTime() > Date.now()) {
+                            errors.push("License rights are not valid yet");
+                        }
                     }
-                }
 
-                if (license.rights.end) {
-                    var rightsEnd = new Date(license.rights.end);
-                    if (rightsEnd.getTime() < Date.now()) {
-                        errors.push("License rights have expired");
+                    if (license.rights.end) {
+                        var rightsEnd = new Date(license.rights.end);
+                        if (rightsEnd.getTime() < Date.now()) {
+                            errors.push("License rights have expired");
+                        }
                     }
                 }
 
@@ -314,7 +316,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
                 });
         }
 
-        function decipherLcp(path, dataType, encryptedAes256cbcContent) {
+        function decipherLcp(path, dataType, encryptedAes256cbcContent, fetchMode) {
             return new Promise(function (resolve) {
                 function handleDecryptResponse(event) {
                     var response = event.data;
@@ -323,7 +325,11 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
                         // can get here so we have to handle just the right one
                         return;
                     }
-                    resolve(response.data.content);
+                    if (fetchMode === 'text') {
+                      resolve(arrayBuffer2Binary(response.data.content.buffer).trim());
+                    } else {
+                      resolve(response.data.content.buffer);
+                    }
 
                     // this is a one shot listener
                     window.removeEventListener('message', handleDecryptResponse, false);
@@ -384,6 +390,12 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
                         if (/html/.test(mimeType)) {
                             try {
                                 data = forge.util.decodeUtf8(data);
+
+                                // trimming bad data at the end the spine
+                                var lastClosingTagIndex = data.lastIndexOf('>');
+                                if (lastClosingTagIndex > 0) {
+                                  data = data.substring(0, lastClosingTagIndex + 1);
+                                }
                             } catch (err) {
                                 console.warn('Can’t decode utf8 content', err);
                             }

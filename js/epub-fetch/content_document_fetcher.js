@@ -82,7 +82,6 @@ define(
                     console.log("DOM BLOB URi DONE: " + loadedDocumentUri);
                     resolvedDocumentCallback(_contentDocumentDom);
                 });
-
             };
 
             // INTERNAL FUNCTIONS

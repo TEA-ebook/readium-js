@@ -28,7 +28,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
     es6Promise.polyfill();
     objectPolyfill();
 
-    var LcpHandler = function (encryptionData, onError) {
+    var LcpHandler = function (encryptionData, lcpChannel, onError) {
 
         // private vars
         var userKey;
@@ -41,6 +41,10 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         } catch (e) {
             onError("encryption key is null or not defined");
         }
+
+        // LCP lib channel
+        var lcpRequests = {};
+        lcpChannel.onmessage = handleDecryptResponse;
 
         // LCP step by step verification functions
 
@@ -318,30 +322,29 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
         function decipherLcp(path, dataType, encryptedAes256cbcContent, fetchMode) {
             return new Promise(function (resolve) {
-                function handleDecryptResponse(event) {
-                    var response = event.data;
-                    if (response.type !== ReadiumSDK.Events.SEND_DATA || response.data.path !== path) {
-                        // all the messages coming through the window object
-                        // can get here so we have to handle just the right one
-                        return;
-                    }
-                    if (fetchMode === 'text') {
-                      resolve(arrayBuffer2Binary(response.data.content.buffer).trim());
-                    } else {
-                      resolve(response.data.content.buffer);
-                    }
-
-                    // this is a one shot listener
-                    window.removeEventListener('message', handleDecryptResponse, false);
-                }
-
                 // we ask the electron app to decrypt data with lcp.node lib
-                ReadiumSDK.reader.emit(ReadiumSDK.Events.REMOTE_DECRYPT_DATA, {
+                lcpRequests[path] = {
+                  resolve,
+                  fetchMode
+                };
+                lcpChannel.postMessage({
+                    type: ReadiumSDK.Events.REMOTE_DECRYPT_DATA,
                     path: path,
                     content: encryptedAes256cbcContent
                 });
-                window.addEventListener('message', handleDecryptResponse, false);
             });
+        }
+
+        function handleDecryptResponse(event) {
+            var response = event.data;
+            var request = lcpRequests[response.path];
+
+            if (request.fetchMode === 'text') {
+              request.resolve(arrayBuffer2Binary(response.content.buffer).trim());
+            } else {
+              request.resolve(response.content.buffer);
+            }
+            delete lcpRequests[response.path];
         }
 
         // PUBLIC API

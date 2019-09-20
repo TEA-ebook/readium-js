@@ -16,7 +16,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
     function ($, URI, MarkupParser, PlainResourceFetcher, ZipResourceFetcher, ContentDocumentFetcher,
               ResourceCache, EncryptionHandler, ContentTypeDiscovery, Helpers) {
 
-    var PublicationFetcher = function(ebookURL, ebookLicense, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor, contentType, options, onError) {
+    var PublicationFetcher = function(ebookURL, ebookLicense, jsLibRoot, sourceWindow, cacheSizeEvictThreshold, contentDocumentTextPreprocessor, contentType, options, channel, onError) {
 
         var self = this;
 
@@ -418,7 +418,7 @@ define(['jquery', 'URIjs', './markup_parser', './plain_resource_fetcher', './zip
                 var encryptionInfos = options.misc;
                 _encryptionData = EncryptionHandler.CreateEncryptionData(packageMetadata.id, encryptionDom, encryptionInfos);
 
-                _encryptionHandler = new EncryptionHandler(_encryptionData, onError);
+                _encryptionHandler = new EncryptionHandler(_encryptionData, channel, onError);
 
                 if (_encryptionHandler.isEncryptionSpecified()) {
                     // EPUBs that use encryption for any resources should be fetched in a programmatical manner:

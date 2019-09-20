@@ -27,6 +27,8 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
 
       var _options = { mathJaxUrl: readerOptions.mathJaxUrl };
 
+      var channel = readiumOptions.channel;
+
       var _contentDocumentTextPreprocessor = function (src, contentDocumentHtml) {
 
         function escapeMarkupEntitiesInUrl(url) {
@@ -142,7 +144,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
           cacheSizeEvictThreshold = readiumOptions.cacheSizeEvictThreshold;
         }
 
-        _currentPublicationFetcher = new PublicationFetcher(ebookURL, ebookLicense, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, contentType, readerOptions, onError);
+        _currentPublicationFetcher = new PublicationFetcher(ebookURL, ebookLicense, jsLibRoot, window, cacheSizeEvictThreshold, _contentDocumentTextPreprocessor, contentType, readerOptions, channel, onError);
 
         _currentPublicationFetcher.initialize(function(resourceFetcher) {
 

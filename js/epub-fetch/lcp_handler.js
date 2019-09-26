@@ -339,6 +339,11 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
             var response = event.data;
             var request = lcpRequests[response.path];
 
+            if (!request) {
+              console.warn('no request found for ' + response.path);
+              return;
+            }
+
             if (request.fetchMode === 'text') {
               request.resolve(arrayBuffer2Binary(response.content.buffer).trim());
             } else {

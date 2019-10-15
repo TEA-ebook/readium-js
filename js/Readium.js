@@ -129,10 +129,10 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
       ReadiumSDK.reader = this.reader;
 
       var openPackageDocument_ = function (ebookURL, ebookLicense, callback, openPageRequest, contentType) {
-        if(ebookURL instanceof Blob && navigator.serviceWorker.controller) {
+        if(ebookURL instanceof Blob && ('serviceWorker' in navigator) && navigator.serviceWorker.controller) {
           navigator.serviceWorker.controller.postMessage({action: 'loadEbook', data: ebookURL});
         } else {
-          console.warn('no service worker controller available, smil audio will fail.');
+          console.warn('no service worker controller available, smil ausdio will fail.');
         }
 
         if (_currentPublicationFetcher) {

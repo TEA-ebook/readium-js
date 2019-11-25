@@ -146,7 +146,11 @@ define(['jquery', 'underscore', '../epub-fetch/markup_parser', 'URIjs', './packa
 
                 var $currSpineElement = $(currSpineElement);
                 var idref = $currSpineElement.attr("idref") ? $currSpineElement.attr("idref") : "";
+
                 var manifestItem = manifest.getManifestItemByIdref(idref);
+                if (!manifestItem) {
+                    return;
+                }
 
                 var id = $currSpineElement.attr("id");
                 var viewport = undefined;

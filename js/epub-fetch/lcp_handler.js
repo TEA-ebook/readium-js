@@ -259,7 +259,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
       function blobToArrayBuffer(blob) {
         return new Promise(function (resolve, reject) {
-          const fileReader = new FileReader();
+          var fileReader = new FileReader();
           fileReader.onload = function () {
             resolve(this.result);
           };
@@ -274,7 +274,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         }
 
         return new Promise(function (resolve, reject) {
-          const fileReader = new FileReader();
+          var fileReader = new FileReader();
           fileReader.onload = function () {
             resolve(this.result);
           };
@@ -297,7 +297,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         compression = compression || 8;
         if (compression === 8) {
           try {
-            const options = (fetchMode === 'blob') ? null : {to: 'string'};
+            var options = (fetchMode === 'blob') ? null : {to: 'string'};
             return pako.inflateRaw(data, options);
           } catch (error) {
             console.warn(error);
@@ -341,8 +341,8 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
       }
 
       function handleDecryptResponse(event) {
-        const response = event.data;
-        const request = lcpRequests[response.path];
+        var response = event.data;
+        var request = lcpRequests[response.path];
 
         if (!request) {
           console.warn('no request found for ' + response.path);
@@ -350,10 +350,10 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         }
 
         if (request.fetchMode === 'text') {
-          const data = arrayBuffer2Binary(response.content.buffer).trim();
-          request.resolvers.forEach(resolve => resolve(data));
+          var data = arrayBuffer2Binary(response.content.buffer).trim();
+          request.resolvers.forEach(function (resolve) { resolve(data); });
         } else {
-          request.resolvers.forEach(resolve => resolve(response.content.buffer));
+          request.resolvers.forEach(function (resolve) { resolve(response.content.buffer); });
         }
         delete lcpRequests[response.path];
       }
@@ -434,7 +434,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 ;
 
 function objectPolyfill() {
-  if (typeof Object.assign != 'function') {
+  if (typeof Object.assign !== 'function') {
     // Must be writable: true, enumerable: false, configurable: true
     Object.defineProperty(Object, "assign", {
       value: function assign(target, varArgs) { // .length of function is 2

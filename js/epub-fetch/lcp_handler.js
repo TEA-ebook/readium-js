@@ -164,7 +164,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
       function decipher(key, encryptedData, dataType) {
         if (dataType === 'arraybuffer') {
-          return aesCbcDecipher(key, arrayBuffer2Binary(encryptedData));
+          return aesCbcDecipher(key, arrayBufferToString(encryptedData));
         }
         if (dataType === 'blob') {
           return blobToBinary(encryptedData).then(function (binaryData) {
@@ -204,12 +204,15 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
       // Utility functions
 
-      function arrayBuffer2Binary(buffer) {
+      function arrayBufferToString(buffer) {
+        return intArrayToString(new Uint8Array(buffer));
+      }
+
+      function intArrayToString(intArray) {
         var binary = '';
-        var bytes = new Uint8Array(buffer);
-        var length = bytes.byteLength;
+        var length = intArray.byteLength;
         for (var i = 0; i < length; i++) {
-          binary += String.fromCharCode(bytes[i]);
+          binary += String.fromCharCode(intArray[i]);
         }
         return binary;
       }
@@ -270,7 +273,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
       function blobToBinary(blob) {
         if (!READ_AS_BINARY_STRING_AVAILABLE) {
-          return blobToArrayBuffer(blob).then(arrayBuffer2Binary);
+          return blobToArrayBuffer(blob).then(arrayBufferToString);
         }
 
         return new Promise(function (resolve, reject) {
@@ -350,10 +353,10 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         }
 
         if (request.fetchMode === 'text') {
-          const data = arrayBuffer2Binary(response.content.buffer).trim();
+          const data = intArrayToString(response.content).trim();
           request.resolvers.forEach(resolve => resolve(data));
         } else {
-          request.resolvers.forEach(resolve => resolve(response.content.buffer));
+          request.resolvers.forEach(resolve => resolve(response.content));
         }
         delete lcpRequests[response.path];
       }

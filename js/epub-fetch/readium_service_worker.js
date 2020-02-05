@@ -23,15 +23,22 @@ var mimeTypeMap = {
 };
 
 self.addEventListener('message', function (event) {
-  if (event.data.action !== 'loadEbook') {
-    return;
+  if (event.data.action === 'loadEbook') {
+    loadEbook(event.data.data);
   }
-  self.epubData = event.data.data;
+  if (event.data.action === 'removeEbook') {
+    delete self.epubData;
+    delete self.epubZip;
+  }
+});
+
+function loadEbook(data) {
+  self.epubData = data;
   self.epubZip = null;
   JSZip.loadAsync(self.epubData).then(function(zip) {
     self.epubZip = zip;
   });
-});
+}
 
 self.addEventListener('install', function(event) {
   event.waitUntil(self.skipWaiting());

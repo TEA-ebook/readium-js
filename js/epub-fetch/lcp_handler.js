@@ -147,7 +147,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
           delete licenseWithoutSignature.signature;
 
           var md = forge.md.sha256.create();
-          md.update(JSON.stringify(jsonSort(licenseWithoutSignature)));
+          md.update(forge.util.encodeUtf8(JSON.stringify(jsonSort(licenseWithoutSignature))));
 
           if (!certificate.publicKey.verify(md.digest().bytes(), atob(license.signature.value))) {
             return reject('Invalid Signature');

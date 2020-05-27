@@ -55,12 +55,16 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         }
 
         function embeddedFontDeobfuscateIdpf(path, obfuscatedResourceBlob, callback) {
+            try {
+                var prefixLength = 1040;
+                // Shamelessly copied from
+                // https://github.com/readium/readium-chrome-extension/blob/26d4b0cafd254cfa93bf7f6225887b83052642e0/scripts/models/path_resolver.js#L102 :
 
-            var prefixLength = 1040;
-            // Shamelessly copied from
-            // https://github.com/readium/readium-chrome-extension/blob/26d4b0cafd254cfa93bf7f6225887b83052642e0/scripts/models/path_resolver.js#L102 :
-
-            xorObfuscatedBlob(obfuscatedResourceBlob, prefixLength, encryptionData.uidHash, callback);
+                xorObfuscatedBlob(obfuscatedResourceBlob, prefixLength, encryptionData.uidHash, callback);
+            } catch (error) {
+              console.warn('unable to deobfuscate embedded Idpf font for path: ' + path, error);
+              callback(null);
+            }
         }
 
         function urnUuidToByteArray(id) {
@@ -80,12 +84,16 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         }
 
         function embeddedFontDeobfuscateAdobe(path, obfuscatedResourceBlob, callback) {
+            try {
+                // extract the UUID and convert to big-endian binary form (16 bytes):
+                var uidWordArray = urnUuidToByteArray(encryptionData.uid);
+                var prefixLength = 1024;
 
-            // extract the UUID and convert to big-endian binary form (16 bytes):
-            var uidWordArray = urnUuidToByteArray(encryptionData.uid);
-            var prefixLength = 1024;
-
-            xorObfuscatedBlob(obfuscatedResourceBlob, prefixLength, uidWordArray, callback)
+                xorObfuscatedBlob(obfuscatedResourceBlob, prefixLength, uidWordArray, callback);
+            } catch (error) {
+                console.warn('unable to deobfuscate embedded Adobe font for path: ' + path, error);
+                callback(null);
+            }
         }
 
         function isLcpEncryptionSpecified() {

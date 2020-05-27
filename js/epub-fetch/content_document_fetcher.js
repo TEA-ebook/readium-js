@@ -49,11 +49,11 @@ define(
                 var resolutionDeferreds = [];
 
                 if (_publicationFetcher.shouldFetchMediaAssetsProgrammatically()) {
-                    
+
                     console.log("fetchMediaAssetsProgrammatically ...");
-            
+
                     resolveDocumentImages(resolutionDeferreds, onerror);
-                    
+
                     resolveDocumentAudios(resolutionDeferreds, onerror);
                     resolveDocumentVideos(resolutionDeferreds, onerror);
                     resolveDocumentInlineStyleImages(resolutionDeferreds, onerror);
@@ -243,6 +243,10 @@ define(
                     cssResourceDownloadDeferreds.push(cssUrlFetchDeferred);
 
                     var processedBlobCallback = function (resourceDataBlob) {
+                        if (!resourceDataBlob) {
+                          cssUrlFetchDeferred.resolve();
+                          return;
+                        }
                         //noinspection JSUnresolvedVariable,JSUnresolvedFunction
                         var resourceObjectURL = window.URL.createObjectURL(resourceDataBlob);
                         stylesheetCssResourceUrlsMap[origMatchedUrlString] = {

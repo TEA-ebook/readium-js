@@ -1,14 +1,14 @@
 //  Copyright (c) 2014 Readium Foundation and/or its licensees. All rights reserved.
-//  
-//  Redistribution and use in source and binary forms, with or without modification, 
+//
+//  Redistribution and use in source and binary forms, with or without modification,
 //  are permitted provided that the following conditions are met:
-//  1. Redistributions of source code must retain the above copyright notice, this 
+//  1. Redistributions of source code must retain the above copyright notice, this
 //  list of conditions and the following disclaimer.
-//  2. Redistributions in binary form must reproduce the above copyright notice, 
-//  this list of conditions and the following disclaimer in the documentation and/or 
+//  2. Redistributions in binary form must reproduce the above copyright notice,
+//  this list of conditions and the following disclaimer in the documentation and/or
 //  other materials provided with the distribution.
-//  3. Neither the name of the organization nor the names of its contributors may be 
-//  used to endorse or promote products derived from this software without specific 
+//  3. Neither the name of the organization nor the names of its contributors may be
+//  used to endorse or promote products derived from this software without specific
 //  prior written permission.
 
 define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (require, module, LcpHandler, CryptoJS_SHA1) {
@@ -115,7 +115,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
 
         this.getEncryptionMethodForRelativePath = function (pathRelativeToRoot) {
             if (self.isEncryptionSpecified()) {
-                return encryptionData.encryptions[pathRelativeToRoot];
+                return encryptionData.encryptions[decodeURIComponent(pathRelativeToRoot)];
             } else {
                 return undefined;
             }
@@ -191,7 +191,7 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
           cipherReference.each(function (index, CipherReference) {
 
             //var cipherReferenceURI = "/" + $(CipherReference).attr('URI');
-            var cipherReferenceURI = $(CipherReference).attr('URI');
+            var cipherReferenceURI = decodeURIComponent($(CipherReference).attr('URI'));
 
             console.log('Encryption/obfuscation algorithm ' + encryptionAlgorithm + ' specified for ' + cipherReferenceURI);
 

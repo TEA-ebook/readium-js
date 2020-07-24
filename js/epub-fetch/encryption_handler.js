@@ -13,12 +13,12 @@
 
 define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (require, module, LcpHandler, CryptoJS_SHA1) {
 
-    var EncryptionHandler = function (encryptionData, channel, onError) {
+    var EncryptionHandler = function (encryptionData, channel, enableEncryption, onError) {
         var self = this;
 
         var LCP_RETRIEVAL_KEY = 'license.lcpl#/encryption/content_key';
 
-        var lcpHandler = encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData, channel, onError) : false;
+        var lcpHandler = enableEncryption && encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData, channel, onError) : false;
 
         var ENCRYPTION_METHODS = {
             'http://www.idpf.org/2008/embedding': embeddedFontDeobfuscateIdpf,
@@ -97,6 +97,9 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         }
 
         function isLcpEncryptionSpecified() {
+            if (!enableEncryption) {
+                return false;
+            }
             if (self.isLcpEncryption === undefined) {
                 self.isLcpEncryption = encryptionData && encryptionData.retrievalKeys && Object.keys(encryptionData.retrievalKeys).some(function (uri) {
                     return encryptionData.retrievalKeys[uri] === LCP_RETRIEVAL_KEY;
@@ -110,15 +113,14 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
         this.isLcpEncryptionSpecified = isLcpEncryptionSpecified;
 
         this.isEncryptionSpecified = function () {
-            return encryptionData && encryptionData.encryptions;
+            return enableEncryption && encryptionData && encryptionData.encryptions;
         };
 
         this.getEncryptionMethodForRelativePath = function (pathRelativeToRoot) {
             if (self.isEncryptionSpecified()) {
                 return encryptionData.encryptions[decodeURIComponent(pathRelativeToRoot)];
-            } else {
-                return undefined;
             }
+            return undefined;
         };
 
         this.getDecryptionFunctionForRelativePath = function (pathRelativeToRoot) {
@@ -129,9 +131,8 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
 
             if (encryptionMethod && ENCRYPTION_METHODS[encryptionMethod]) {
                 return ENCRYPTION_METHODS[encryptionMethod];
-            } else {
-                return undefined;
             }
+            return undefined;
         };
 
         this.checkLicense = function (license, callback, error) {

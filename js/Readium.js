@@ -77,13 +77,15 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
           });
         }
 
-        var sourceParts = src.split("/");
-        //sourceParts.pop(); //remove source file name
-        var baseHref = sourceParts.join("/"); // + "/";
+        var baseHref = src;
+        if (src.indexOf("http") === -1) {
+          baseHref = encodeURI(escapeMarkupEntitiesInUrl(src));
+        }
 
         console.log("EPUB doc base href:");
         console.log(baseHref);
-        var base = "<base href=\"" + encodeURI(escapeMarkupEntitiesInUrl(baseHref)) + "\"/>";
+
+        var base = "<base href=\"" + baseHref + "\"/>";
 
         var scripts = "<script type=\"text/javascript\"><![CDATA[(" + injectedScript.toString().replace('{{SRC}}', src.toString()) + ")()]]><\/script>";
 

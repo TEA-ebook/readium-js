@@ -13,12 +13,12 @@
 
 define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (require, module, LcpHandler, CryptoJS_SHA1) {
 
-    var EncryptionHandler = function (encryptionData, channel, enableEncryption, onError) {
+    var EncryptionHandler = function (encryptionData, enableEncryption, onError) {
         var self = this;
 
         var LCP_RETRIEVAL_KEY = 'license.lcpl#/encryption/content_key';
 
-        var lcpHandler = enableEncryption && encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData, channel, onError) : false;
+        var lcpHandler = enableEncryption && encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData, onError) : false;
 
         var ENCRYPTION_METHODS = {
             'http://www.idpf.org/2008/embedding': embeddedFontDeobfuscateIdpf,

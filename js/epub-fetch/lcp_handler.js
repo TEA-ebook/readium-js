@@ -18,6 +18,8 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
   var lcpProfiles = [LCP_BASIC_PROFILE, LCP_PROFILE_1_0];
 
+  var LCP_TEA_EBOOK_PROVIDERS = ['www.tea-ebook.com', 'www.tea-ebook.com-PP'];
+
   var IV_BYTES_SIZE = 16;
   var CBC_CHUNK_SIZE = 1024 * 32; // best perf with 32ko chunks
 
@@ -26,12 +28,13 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
   es6Promise.polyfill();
   objectPolyfill();
 
-  var LcpHandler = function (encryptionData, onError) {
+  var LcpHandler = function (encryptionData, lcpChannel, onError) {
 
       // private vars
       var userKey;
       var contentKey;
       var encryptionInfos = encryptionData.infos;
+      var useOfficialLib = false;
 
       try {
         userKey = forge.util.hexToBytes(encryptionInfos.hash);
@@ -39,10 +42,24 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
         onError("encryption key is null or not defined");
       }
 
+      // LCP lib channel
+      var lcpRequests = {};
+      lcpChannel.onmessage = handleDecryptResponse;
+
       // LCP step by step verification functions
+
+      function isOfficialLcp(license) {
+        return !LCP_TEA_EBOOK_PROVIDERS.includes(license.provider) && license.encryption.profile === LCP_PROFILE_1_0;
+      }
 
       function checkUserKey(license) {
         return new Promise(function (resolve, reject) {
+          // Official LCP -> key is already checked
+          if (isOfficialLcp(license)) {
+            resolve(license);
+            return;
+          }
+
           var userKeyCheck = license.encryption.user_key.key_check;
 
           // Decrypt and compare it to license ID
@@ -306,9 +323,57 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
           });
       }
 
+      function decipherLcp(path, dataType, encryptedAes256cbcContent, fetchMode) {
+        return new Promise(function (resolve) {
+            if (!(path in lcpRequests)) {
+              lcpRequests[path] = {
+                resolvers: [],
+                fetchMode
+              };
+            }
+            lcpRequests[path].resolvers.push(resolve);
+
+            // we ask the electron app to decrypt data with lcp.node lib
+            lcpChannel.postMessage({
+              type: ReadiumSDK.Events.REMOTE_DECRYPT_DATA,
+              path: path,
+              content: encryptedAes256cbcContent
+            });
+          }
+        );
+      }
+
+      function handleDecryptResponse(event) {
+        var response = event.data;
+        var request = lcpRequests[response.path];
+
+        if (!request) {
+          console.warn('no request found for ' + response.path);
+          return;
+        }
+
+        if (request.fetchMode === 'text') {
+          const data = intArrayToString(response.content).trim();
+          request.resolvers.forEach(function (resolve) { resolve(data); });
+        } else {
+          request.resolvers.forEach(function (resolve) { resolve(response.content); });
+        }
+        delete lcpRequests[response.path];
+      }
+
 // PUBLIC API
 
       this.checkLicense = function (license, callback, error) {
+        if (isOfficialLcp(license)) {
+          checkLicenseFields(license)
+            .then(function () {
+              useOfficialLib = true;
+              callback();
+            })
+            .catch(error);
+          return;
+        }
+
         checkUserKey(license)
           .then(checkLicenseFields)
           .then(checkLicenseSignature)
@@ -327,7 +392,9 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
           mimeType = encryptedAes256cbcContent.type;
         }
 
-        decipherCare(path, dataType, encryptedAes256cbcContent, fetchMode)
+        var decipherMethod = useOfficialLib === true ? decipherLcp : decipherCare;
+
+        decipherMethod(path, dataType, encryptedAes256cbcContent, fetchMode)
           .then(function (decryptedBinaryData) {
             if (fetchMode === 'text') {
               // BOM removal
@@ -362,10 +429,12 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
           console.error("Can't decrypt LCP content", error);
         });
       };
-    };
+    }
+  ;
 
   return LcpHandler;
-});
+})
+;
 
 function objectPolyfill() {
   if (typeof Object.assign !== 'function') {

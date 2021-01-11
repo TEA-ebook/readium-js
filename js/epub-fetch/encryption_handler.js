@@ -13,12 +13,12 @@
 
 define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (require, module, LcpHandler, CryptoJS_SHA1) {
 
-    var EncryptionHandler = function (encryptionData, enableEncryption, onError) {
+    var EncryptionHandler = function (encryptionData, channel, enableEncryption, onError) {
         var self = this;
 
         var LCP_RETRIEVAL_KEY = 'license.lcpl#/encryption/content_key';
 
-        var lcpHandler = enableEncryption && encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData, onError) : false;
+        var lcpHandler = enableEncryption && encryptionData.infos && isLcpEncryptionSpecified() ? new LcpHandler(encryptionData, channel, onError) : false;
 
         var ENCRYPTION_METHODS = {
             'http://www.idpf.org/2008/embedding': embeddedFontDeobfuscateIdpf,
@@ -176,13 +176,13 @@ define(['require', 'module', './lcp_handler', 'cryptoJs/sha1'], function (requir
           var encryptionAlgorithm = data.find("enc\\:EncryptionMethod, EncryptionMethod").first().attr('Algorithm');
 
           var retrievalMethod = false;
-          var retrievalMethods = $('RetrievalMethod', encryptedData);
+          var retrievalMethods = data.find("ds\\:RetrievalMethod, RetrievalMethod");
           if (retrievalMethods.length > 0) {
             retrievalMethod = retrievalMethods.first().attr('URI');
           }
 
           var compressionMethod = false;
-          var compressionMethods = $('Compression', encryptedData);
+          var compressionMethods = data.find("ds\\:Compression, Compression");
           if (compressionMethods.length > 0) {
               compressionMethod = parseInt(compressionMethods.first().attr('Method'), 10);
           }

@@ -75,7 +75,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
           });
         }
 
-        var baseHref = encodeURI(escapeMarkupEntitiesInUrl(src))
+        var baseHref = encodeURI(escapeMarkupEntitiesInUrl(src));
 
         console.log("EPUB doc base href:");
         console.log(baseHref);

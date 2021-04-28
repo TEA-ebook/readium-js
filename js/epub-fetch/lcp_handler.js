@@ -306,6 +306,24 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
           });
       }
 
+      function decodeUtf8(data) {
+        var decodedData;
+        try {
+          decodedData = forge.util.decodeUtf8(data);
+        } catch (err) {
+          // we will try to encode data first
+        }
+        if (!decodedData) {
+          try {
+            decodedData = forge.util.decodeUtf8(forge.util.encodeUtf8(data));
+          } catch (err) {
+            console.warn('Can’t decode utf8 content', err);
+            return data;
+          }
+        }
+        return decodedData;
+      }
+
 // PUBLIC API
 
       this.checkLicense = function (license, callback, error) {
@@ -338,17 +356,13 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
               // convert UTF-8 decoded data to UTF-16 javascript string
               if (/html/.test(mimeType)) {
-                try {
-                  data = forge.util.decodeUtf8(data);
+                  data = decodeUtf8(data);
 
                   // trimming bad data at the end the spine
                   var lastClosingTagIndex = data.lastIndexOf('>');
                   if (lastClosingTagIndex > 0) {
                     data = data.substring(0, lastClosingTagIndex + 1);
                   }
-                } catch (err) {
-                  console.warn('Can’t decode utf8 content', err);
-                }
               }
               callback(data);
             } else if (fetchMode === 'data64') {

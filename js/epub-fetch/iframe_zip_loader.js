@@ -133,7 +133,7 @@ define(['URIjs', 'readium_shared_js/views/iframe_loader', 'underscore', './disco
             // Chrome on iOS fails to access iframe.contentWindow with BlobURI and data URL :(
             var isBlobHandled = !chromeIOS // fallback to srcdoc
                 && !bowser.msie
-                && !(bowser.ios && (parseInt(bowser.version, 10) < 7))
+                && !(bowser.ios && (parseInt(bowser.osversion.split('.').pop(), 10) < 7))
                 && !bowser.samsungBrowser;
 
             if (isBlobHandled) {

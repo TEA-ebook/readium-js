@@ -82,6 +82,8 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
         console.log("EPUB doc base href:");
         console.log(baseHref);
 
+        var style = "<style>img {-webkit-touch-callout: none; -webkit-user-select: none; user-select: none;}</style>";
+
         var base = "<base href=\"" + baseHref + "\"/>";
 
         var scripts = "<script type=\"text/javascript\"><![CDATA[(" + injectedScript.toString().replace('{{SRC}}', src.toString()) + ")()]]><\/script>";
@@ -90,7 +92,7 @@ define(['readium_shared_js/globals', 'text!version.json', 'jquery', 'underscore'
           scripts += "<script type=\"text/javascript\" src=\"" + _options.mathJaxUrl + "\"> <\/script>";
         }
 
-        contentDocumentHtml = contentDocumentHtml.replace(/(<head[\s\S]*?>)/, "$1" + base + scripts);
+        contentDocumentHtml = contentDocumentHtml.replace(/(<head[\s\S]*?>)/, "$1" + base + scripts + style);
 
         contentDocumentHtml = contentDocumentHtml.replace(/(<iframe[\s\S]+?)src[\s]*=[\s]*(["'])[\s]*(.*)[\s]*(["'])([\s\S]*?>)/g, '$1data-src=$2$3$4$5');
 

@@ -298,12 +298,8 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
       compression = compression || 8;
       if (compression === 8) {
         try {
-          const unziped = pako.inflateRaw(data, null);
-          if (fetchMode !== 'blob') {
-            const decoder = new TextDecoder('utf8');
-            return decoder.decode(unziped);
-          }
-          return unziped;
+          var options = (fetchMode === 'blob') ? null : {to: 'string'};
+          return pako.inflateRaw(data, options);
         } catch (error) {
           console.warn(error);
           return data;
@@ -430,7 +426,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
             // convert UTF-8 decoded data to UTF-16 javascript string
             if (/html/.test(mimeType)) {
-              // data = decodeUtf8(data);
+              data = decodeUtf8(data);
 
               // trimming bad data at the end the spine
               var lastClosingTagIndex = data.lastIndexOf('>');

@@ -298,8 +298,12 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
       compression = compression || 8;
       if (compression === 8) {
         try {
-          var options = (fetchMode === 'blob') ? null : {to: 'string'};
-          return pako.inflateRaw(data, options);
+          const unziped = pako.inflateRaw(data, null);
+          if (fetchMode !== 'blob') {
+            const decoder = new TextDecoder('utf8');
+            return decoder.decode(unziped);
+          }
+          return unziped;
         } catch (error) {
           console.warn(error);
           return data;

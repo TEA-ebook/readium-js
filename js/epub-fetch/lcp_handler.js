@@ -426,7 +426,7 @@ define(['forge', 'promise', 'pako'], function (forge, es6Promise, pako) {
 
             // convert UTF-8 decoded data to UTF-16 javascript string
             if (/html/.test(mimeType)) {
-              data = decodeUtf8(data);
+              // data = decodeUtf8(data);
 
               // trimming bad data at the end the spine
               var lastClosingTagIndex = data.lastIndexOf('>');
